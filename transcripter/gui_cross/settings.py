@@ -7,6 +7,42 @@ from typing import Callable, Optional
 from ..config import ConfigManager
 from ..audio import AudioRecorder
 from ..hotkeys import HotkeyValidator
+from ..providers import ProviderType, ProviderRegistry
+
+
+# Provider display names and info URLs
+PROVIDER_INFO = {
+    ProviderType.GROQ: {
+        "name": "Groq",
+        "url": "console.groq.com",
+        "key_label": "API Key",
+        "key_placeholder": "Enter your Groq API key",
+    },
+    ProviderType.OPENAI: {
+        "name": "OpenAI",
+        "url": "platform.openai.com/api-keys",
+        "key_label": "API Key",
+        "key_placeholder": "Enter your OpenAI API key",
+    },
+    ProviderType.GOOGLE_CLOUD: {
+        "name": "Google Cloud",
+        "url": "console.cloud.google.com",
+        "key_label": "Credentials File Path",
+        "key_placeholder": "Path to service account JSON file",
+    },
+    ProviderType.ASSEMBLYAI: {
+        "name": "AssemblyAI",
+        "url": "assemblyai.com/app/account",
+        "key_label": "API Key",
+        "key_placeholder": "Enter your AssemblyAI API key",
+    },
+    ProviderType.DEEPGRAM: {
+        "name": "Deepgram",
+        "url": "console.deepgram.com",
+        "key_label": "API Key",
+        "key_placeholder": "Enter your Deepgram API key",
+    },
+}
 
 
 class SettingsWindow:
@@ -35,6 +71,17 @@ class SettingsWindow:
         self.history_var: Optional[tk.BooleanVar] = None
         self.max_history_var: Optional[tk.IntVar] = None
 
+        # Transcription provider variables
+        self.provider_var: Optional[tk.StringVar] = None
+        self.fallback_var: Optional[tk.StringVar] = None
+
+        # Widgets that need to be updated dynamically
+        self.api_key_entry: Optional[ttk.Entry] = None
+        self.api_key_label: Optional[ttk.Label] = None
+        self.api_key_info_label: Optional[ttk.Label] = None
+        self.model_combo: Optional[ttk.Combobox] = None
+        self.show_key_btn: Optional[ttk.Button] = None
+
     def show(self) -> None:
         """Show the settings window."""
         if self.window and self.window.winfo_exists():
@@ -49,7 +96,7 @@ class SettingsWindow:
         """Create the settings window and its widgets."""
         self.window = tk.Toplevel()
         self.window.title("Transcripter Settings")
-        self.window.geometry("550x450")
+        self.window.geometry("600x500")
         self.window.resizable(True, True)
 
         # Center the window
@@ -71,6 +118,8 @@ class SettingsWindow:
         self.autostart_var = tk.BooleanVar()
         self.history_var = tk.BooleanVar()
         self.max_history_var = tk.IntVar(value=50)
+        self.provider_var = tk.StringVar()
+        self.fallback_var = tk.StringVar()
 
         # Create notebook for tabs
         notebook = ttk.Notebook(self.window)
@@ -79,7 +128,7 @@ class SettingsWindow:
         # Create tabs
         notebook.add(self._create_general_tab(), text="General")
         notebook.add(self._create_audio_tab(), text="Audio")
-        notebook.add(self._create_groq_tab(), text="Groq API")
+        notebook.add(self._create_transcription_tab(), text="Transcription")
         notebook.add(self._create_hotkeys_tab(), text="Hotkeys")
         notebook.add(self._create_history_tab(), text="History")
 
@@ -175,19 +224,51 @@ class SettingsWindow:
 
         return frame
 
-    def _create_groq_tab(self) -> ttk.Frame:
-        """Create the Groq API settings tab."""
+    def _create_transcription_tab(self) -> ttk.Frame:
+        """Create the transcription settings tab with provider selection."""
         frame = ttk.Frame()
         frame.columnconfigure(1, weight=1)
 
         row = 0
 
-        # API Key
-        ttk.Label(frame, text="Groq API Key:").grid(
+        # Provider selection
+        ttk.Label(frame, text="Transcription Provider:").grid(
             row=row, column=0, sticky='w', padx=10, pady=5
+        )
+
+        providers = []
+        self._provider_map = {}
+        self._provider_map_reverse = {}
+        for provider_type in ProviderType:
+            info = PROVIDER_INFO.get(provider_type, {})
+            name = info.get("name", provider_type.value)
+            installed = ProviderRegistry.is_provider_available(provider_type)
+            label = f"{name}" if installed else f"{name} (SDK not installed)"
+            providers.append(label)
+            self._provider_map[label] = provider_type.value
+            self._provider_map_reverse[provider_type.value] = label
+
+        provider_combo = ttk.Combobox(
+            frame, textvariable=self.provider_var,
+            values=providers,
+            state='readonly'
+        )
+        provider_combo.grid(row=row, column=1, sticky='ew', padx=10, pady=5)
+        provider_combo.bind('<<ComboboxSelected>>', self._on_provider_changed)
+        row += 1
+
+        # Separator
+        ttk.Separator(frame, orient='horizontal').grid(
+            row=row, column=0, columnspan=2, sticky='ew', padx=10, pady=10
         )
         row += 1
 
+        # API Key label
+        self.api_key_label = ttk.Label(frame, text="API Key:")
+        self.api_key_label.grid(row=row, column=0, sticky='w', padx=10, pady=5)
+        row += 1
+
+        # API Key entry frame
         api_frame = ttk.Frame(frame)
         api_frame.grid(row=row, column=0, columnspan=2, sticky='ew', padx=10, pady=5)
         api_frame.columnconfigure(0, weight=1)
@@ -200,12 +281,13 @@ class SettingsWindow:
         row += 1
 
         # Info about getting API key
-        ttk.Label(
+        self.api_key_info_label = ttk.Label(
             frame,
             text="Get your API key at: console.groq.com",
             foreground='blue',
             cursor='hand2'
-        ).grid(row=row, column=0, columnspan=2, sticky='w', padx=10, pady=5)
+        )
+        self.api_key_info_label.grid(row=row, column=0, columnspan=2, sticky='w', padx=10, pady=5)
         row += 1
 
         # Separator
@@ -215,25 +297,139 @@ class SettingsWindow:
         row += 1
 
         # Model selection
-        ttk.Label(frame, text="Whisper Model:").grid(
+        ttk.Label(frame, text="Model:").grid(
             row=row, column=0, sticky='w', padx=10, pady=5
         )
 
-        models = [
-            ("Whisper Large V3 Turbo (Fast)", "whisper-large-v3-turbo"),
-            ("Whisper Large V3 (Accurate)", "whisper-large-v3"),
-        ]
-
-        model_combo = ttk.Combobox(
+        self.model_combo = ttk.Combobox(
             frame, textvariable=self.model_var,
-            values=[m[0] for m in models],
             state='readonly'
         )
-        model_combo.grid(row=row, column=1, sticky='ew', padx=10, pady=5)
-        self._model_map = {m[0]: m[1] for m in models}
-        self._model_map_reverse = {m[1]: m[0] for m in models}
+        self.model_combo.grid(row=row, column=1, sticky='ew', padx=10, pady=5)
+        row += 1
+
+        # Separator
+        ttk.Separator(frame, orient='horizontal').grid(
+            row=row, column=0, columnspan=2, sticky='ew', padx=10, pady=10
+        )
+        row += 1
+
+        # Fallback provider selection
+        ttk.Label(frame, text="Fallback Provider:").grid(
+            row=row, column=0, sticky='w', padx=10, pady=5
+        )
+
+        fallback_options = ["None (Disabled)"]
+        self._fallback_map = {"None (Disabled)": ""}
+        self._fallback_map_reverse = {"": "None (Disabled)"}
+        for provider_type in ProviderType:
+            info = PROVIDER_INFO.get(provider_type, {})
+            name = info.get("name", provider_type.value)
+            fallback_options.append(name)
+            self._fallback_map[name] = provider_type.value
+            self._fallback_map_reverse[provider_type.value] = name
+
+        fallback_combo = ttk.Combobox(
+            frame, textvariable=self.fallback_var,
+            values=fallback_options,
+            state='readonly'
+        )
+        fallback_combo.grid(row=row, column=1, sticky='ew', padx=10, pady=5)
+        row += 1
+
+        # Fallback info
+        ttk.Label(
+            frame,
+            text="Fallback provider is used when the primary provider fails.",
+            foreground='gray'
+        ).grid(row=row, column=0, columnspan=2, sticky='w', padx=10, pady=5)
 
         return frame
+
+    def _on_provider_changed(self, event=None) -> None:
+        """Handle provider selection change."""
+        provider_display = self.provider_var.get()
+        provider_id = self._provider_map.get(provider_display)
+        if not provider_id:
+            return
+
+        try:
+            provider_type = ProviderType(provider_id)
+        except ValueError:
+            return
+
+        info = PROVIDER_INFO.get(provider_type, {})
+
+        # Update API key label
+        key_label = info.get("key_label", "API Key")
+        self.api_key_label.config(text=f"{key_label}:")
+
+        # Update info URL
+        url = info.get("url", "")
+        self.api_key_info_label.config(text=f"Get your credentials at: {url}")
+
+        # Load API key for this provider
+        api_key = self.config_manager.get_api_key(provider_type)
+        self.api_key_var.set(api_key if api_key else "")
+
+        # Update model combo
+        self._update_model_combo(provider_type)
+
+    def _update_model_combo(self, provider_type: ProviderType) -> None:
+        """Update the model combo based on provider."""
+        models = self._get_provider_models(provider_type)
+
+        # Update model map
+        self._model_map = {m["name"]: m["id"] for m in models}
+        self._model_map_reverse = {m["id"]: m["name"] for m in models}
+
+        # Update combo values
+        model_names = [m["name"] for m in models]
+        self.model_combo.config(values=model_names)
+
+        # Set active model from config
+        try:
+            provider_config = self.config_manager.get_provider_config(provider_type)
+            if hasattr(provider_config, 'model'):
+                model_display = self._model_map_reverse.get(provider_config.model)
+                if model_display:
+                    self.model_var.set(model_display)
+                elif model_names:
+                    self.model_var.set(model_names[0])
+            elif model_names:
+                self.model_var.set(model_names[0])
+        except Exception:
+            if model_names:
+                self.model_var.set(model_names[0])
+
+    def _get_provider_models(self, provider_type: ProviderType) -> list[dict]:
+        """Get models for a provider without requiring API key."""
+        models = {
+            ProviderType.GROQ: [
+                {"id": "whisper-large-v3-turbo", "name": "Whisper Large V3 Turbo (Recommended)"},
+                {"id": "whisper-large-v3", "name": "Whisper Large V3"},
+            ],
+            ProviderType.OPENAI: [
+                {"id": "whisper-1", "name": "Whisper-1"},
+            ],
+            ProviderType.GOOGLE_CLOUD: [
+                {"id": "chirp_2", "name": "Chirp 2 (Recommended)"},
+                {"id": "chirp", "name": "Chirp"},
+                {"id": "default", "name": "Default"},
+            ],
+            ProviderType.ASSEMBLYAI: [
+                {"id": "best", "name": "Best (Highest accuracy)"},
+                {"id": "nano", "name": "Nano (Faster, lower cost)"},
+            ],
+            ProviderType.DEEPGRAM: [
+                {"id": "nova-2", "name": "Nova-2 (Recommended)"},
+                {"id": "nova", "name": "Nova"},
+                {"id": "whisper-large", "name": "Whisper Large"},
+                {"id": "whisper-medium", "name": "Whisper Medium"},
+                {"id": "whisper-small", "name": "Whisper Small"},
+            ],
+        }
+        return models.get(provider_type, [])
 
     def _create_hotkeys_tab(self) -> ttk.Frame:
         """Create the hotkeys settings tab."""
@@ -316,13 +512,18 @@ class SettingsWindow:
         device = config.audio.device_name if config.audio.device_name else "System Default"
         self.device_var.set(device)
 
-        # Groq
-        api_key = self.config_manager.get_api_key()
-        if api_key:
-            self.api_key_var.set(api_key)
+        # Transcription provider
+        active_provider = config.transcription.active_provider
+        provider_display = self._provider_map_reverse.get(active_provider, "Groq")
+        self.provider_var.set(provider_display)
 
-        model_display = self._model_map_reverse.get(config.groq.model, "Whisper Large V3 Turbo (Fast)")
-        self.model_var.set(model_display)
+        # Trigger provider change to load provider-specific settings
+        self._on_provider_changed()
+
+        # Fallback provider
+        fallback = config.transcription.fallback_provider
+        fallback_display = self._fallback_map_reverse.get(fallback, "None (Disabled)")
+        self.fallback_var.set(fallback_display)
 
         # Hotkeys
         self.hotkey_var.set(config.hotkeys.start_recording)
@@ -365,13 +566,35 @@ class SettingsWindow:
             device = self.device_var.get()
             config.audio.device_name = "" if device == "System Default" else device
 
-            # Groq
-            api_key = self.api_key_var.get().strip()
-            if api_key:
-                self.config_manager.set_api_key(api_key)
+            # Transcription provider
+            provider_display = self.provider_var.get()
+            provider_id = self._provider_map.get(provider_display)
+            if provider_id:
+                config.transcription.active_provider = provider_id
 
-            model_display = self.model_var.get()
-            config.groq.model = self._model_map.get(model_display, "whisper-large-v3-turbo")
+                # Save API key for this provider
+                api_key = self.api_key_var.get().strip()
+                if api_key:
+                    try:
+                        provider_type = ProviderType(provider_id)
+                        self.config_manager.set_api_key(api_key, provider_type)
+                    except ValueError:
+                        pass
+
+                # Save model
+                model_display = self.model_var.get()
+                model_id = self._model_map.get(model_display)
+                if model_id:
+                    try:
+                        provider_type = ProviderType(provider_id)
+                        self.config_manager.update_provider_config(provider_type, model=model_id)
+                    except ValueError:
+                        pass
+
+            # Fallback provider
+            fallback_display = self.fallback_var.get()
+            fallback_id = self._fallback_map.get(fallback_display, "")
+            config.transcription.fallback_provider = fallback_id
 
             # Hotkeys
             config.hotkeys.start_recording = HotkeyValidator.normalize(hotkey)

@@ -1,30 +1,68 @@
-"""Transcription module using Groq API."""
+"""Transcription service facade for multi-provider support."""
 
-import os
 import time
-from pathlib import Path
 from typing import Optional, Callable
-from groq import Groq, GroqError
+
+from .providers import (
+    TranscriptionProvider,
+    TranscriptionResult,
+    TranscriptionError,
+    APIKeyError,
+    RateLimitError,
+    ProviderType,
+    ProviderRegistry,
+)
 
 
 class TranscriptionService:
-    """Handles audio transcription using Groq Whisper API."""
+    """
+    Facade for transcription providers.
 
-    def __init__(self, api_key: str):
+    This class provides a unified interface for transcription operations,
+    supporting multiple providers with automatic fallback.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        provider_type: Optional[ProviderType] = None,
+        fallback_api_key: Optional[str] = None,
+        fallback_provider_type: Optional[ProviderType] = None,
+    ):
         """
         Initialize the transcription service.
 
         Args:
-            api_key: Groq API key
+            api_key: API key for the primary provider
+            provider_type: Primary provider type (default: GROQ for backward compatibility)
+            fallback_api_key: API key for the fallback provider
+            fallback_provider_type: Fallback provider type
 
         Raises:
-            ValueError: If API key is empty or None
+            ValueError: If API key is empty or provider is not available
         """
         if not api_key:
             raise ValueError("API key is required")
 
-        self.client = Groq(api_key=api_key)
+        self.provider_type = provider_type or ProviderType.GROQ
+        self.fallback_provider_type = fallback_provider_type
+
+        # Initialize primary provider
+        self._provider = ProviderRegistry.create_provider(self.provider_type, api_key)
+
+        # Initialize fallback provider if configured
+        self._fallback_provider: Optional[TranscriptionProvider] = None
+        if fallback_api_key and fallback_provider_type:
+            try:
+                self._fallback_provider = ProviderRegistry.create_provider(
+                    fallback_provider_type, fallback_api_key
+                )
+            except Exception as e:
+                print(f"Failed to initialize fallback provider: {e}")
+
+        # State
         self.last_transcription: Optional[str] = None
+        self.last_result: Optional[TranscriptionResult] = None
         self.last_error: Optional[str] = None
 
         # Callbacks
@@ -32,114 +70,148 @@ class TranscriptionService:
         self.on_transcription_completed: Optional[Callable[[str], None]] = None
         self.on_transcription_failed: Optional[Callable[[str], None]] = None
 
+    def _setup_provider_callbacks(self, provider: TranscriptionProvider) -> None:
+        """Set up callbacks on a provider."""
+        provider.on_transcription_started = self.on_transcription_started
+
+        def on_completed(result: TranscriptionResult):
+            self.last_result = result
+            self.last_transcription = result.text
+            self.last_error = None
+            if self.on_transcription_completed:
+                self.on_transcription_completed(result.text)
+
+        provider.on_transcription_completed = on_completed
+        provider.on_transcription_failed = self.on_transcription_failed
+
     def transcribe_file(
         self,
         file_path: str,
-        model: str = "whisper-large-v3-turbo",
+        model: Optional[str] = None,
         language: Optional[str] = None,
         prompt: Optional[str] = None,
         temperature: float = 0.0,
-        response_format: str = "text"
+        response_format: str = "text",
+        **kwargs
     ) -> Optional[str]:
         """
         Transcribe an audio file.
 
         Args:
             file_path: Path to the audio file
-            model: Whisper model to use (default: whisper-large-v3-turbo)
+            model: Model to use (provider-specific)
             language: Language code (e.g., "en", "pt") or None for auto-detection
             prompt: Optional prompt to guide the model
             temperature: Sampling temperature (0.0 - 1.0)
-            response_format: Response format ("text", "json", "verbose_json")
+            response_format: Response format (provider-specific)
+            **kwargs: Additional provider-specific parameters
 
         Returns:
             Transcribed text or None if transcription failed
         """
-        if not os.path.exists(file_path):
-            error_msg = f"Audio file not found: {file_path}"
-            print(error_msg)
-            self.last_error = error_msg
-            if self.on_transcription_failed:
-                self.on_transcription_failed(error_msg)
-            return None
+        self._setup_provider_callbacks(self._provider)
 
         try:
-            if self.on_transcription_started:
-                self.on_transcription_started()
+            result = self._provider.transcribe_file(
+                file_path=file_path,
+                model=model,
+                language=language,
+                prompt=prompt,
+                temperature=temperature,
+                response_format=response_format,
+                **kwargs
+            )
 
-            # Open and read the audio file
-            with open(file_path, "rb") as audio_file:
-                # Prepare transcription parameters
-                transcription_params = {
-                    "file": (os.path.basename(file_path), audio_file),
-                    "model": model,
-                    "temperature": temperature,
-                    "response_format": response_format
-                }
+            if result:
+                return result.text
 
-                # Add optional parameters
-                if language:
-                    transcription_params["language"] = language
+        except (TranscriptionError, APIKeyError, RateLimitError) as e:
+            self.last_error = str(e)
+            print(f"Primary provider failed: {e}")
 
-                if prompt:
-                    transcription_params["prompt"] = prompt
+            # Try fallback provider
+            if self._fallback_provider and e.recoverable:
+                print(f"Attempting fallback provider: {self.fallback_provider_type.value}")
+                return self._try_fallback(
+                    file_path=file_path,
+                    language=language,
+                    prompt=prompt,
+                    temperature=temperature,
+                    **kwargs
+                )
 
-                # Call Groq API
-                transcription = self.client.audio.transcriptions.create(**transcription_params)
-
-                # Extract text based on response format
-                if response_format == "text":
-                    transcribed_text = transcription
-                else:
-                    transcribed_text = transcription.text
-
-                self.last_transcription = transcribed_text
-                self.last_error = None
-
-                if self.on_transcription_completed:
-                    self.on_transcription_completed(transcribed_text)
-
-                return transcribed_text
-
-        except GroqError as e:
-            error_msg = f"Groq API error: {str(e)}"
-            print(error_msg)
-            self.last_error = error_msg
             if self.on_transcription_failed:
-                self.on_transcription_failed(error_msg)
-            return None
+                self.on_transcription_failed(str(e))
 
         except Exception as e:
-            error_msg = f"Transcription error: {str(e)}"
-            print(error_msg)
-            self.last_error = error_msg
+            self.last_error = str(e)
+            print(f"Transcription error: {e}")
+
             if self.on_transcription_failed:
-                self.on_transcription_failed(error_msg)
+                self.on_transcription_failed(str(e))
+
+        return None
+
+    def _try_fallback(
+        self,
+        file_path: str,
+        language: Optional[str] = None,
+        prompt: Optional[str] = None,
+        temperature: float = 0.0,
+        **kwargs
+    ) -> Optional[str]:
+        """Try transcription with the fallback provider."""
+        if not self._fallback_provider:
             return None
+
+        self._setup_provider_callbacks(self._fallback_provider)
+
+        try:
+            result = self._fallback_provider.transcribe_file(
+                file_path=file_path,
+                language=language,
+                prompt=prompt,
+                temperature=temperature,
+                **kwargs
+            )
+
+            if result:
+                return result.text
+
+        except Exception as e:
+            self.last_error = str(e)
+            print(f"Fallback provider also failed: {e}")
+
+            if self.on_transcription_failed:
+                self.on_transcription_failed(str(e))
+
+        return None
 
     def transcribe_file_with_retry(
         self,
         file_path: str,
-        model: str = "whisper-large-v3-turbo",
+        model: Optional[str] = None,
         language: Optional[str] = None,
         prompt: Optional[str] = None,
         temperature: float = 0.0,
         response_format: str = "text",
         max_retries: int = 3,
-        retry_delay: float = 1.0
+        retry_delay: float = 1.0,
+        **kwargs
     ) -> Optional[str]:
         """
         Transcribe an audio file with retry logic.
 
         Args:
             file_path: Path to the audio file
-            model: Whisper model to use
+            model: Model to use (provider-specific)
             language: Language code or None for auto-detection
             prompt: Optional prompt to guide the model
             temperature: Sampling temperature
             response_format: Response format
             max_retries: Maximum number of retry attempts
             retry_delay: Delay between retries in seconds
+            **kwargs: Additional provider-specific parameters
 
         Returns:
             Transcribed text or None if all retries failed
@@ -152,20 +224,20 @@ class TranscriptionService:
                     language=language,
                     prompt=prompt,
                     temperature=temperature,
-                    response_format=response_format
+                    response_format=response_format,
+                    **kwargs
                 )
 
                 if result:
                     return result
 
-                # If result is None but no exception, don't retry
+                # Check if we should retry
                 if self.last_error and "rate limit" in self.last_error.lower():
-                    # Rate limited, wait and retry
                     if attempt < max_retries - 1:
                         time.sleep(retry_delay * (attempt + 1))
                         continue
                 else:
-                    # Other error, don't retry
+                    # Non-retryable error
                     break
 
             except Exception as e:
@@ -179,40 +251,64 @@ class TranscriptionService:
 
     def get_supported_models(self) -> list[str]:
         """
-        Get list of supported Whisper models.
+        Get list of supported models for the active provider.
 
         Returns:
             List of model names
         """
-        return [
-            "whisper-large-v3",
-            "whisper-large-v3-turbo",
-        ]
+        models = self._provider.get_supported_models()
+        return [m["id"] for m in models]
+
+    def get_supported_models_with_names(self) -> list[dict[str, str]]:
+        """
+        Get list of supported models with display names.
+
+        Returns:
+            List of dicts with 'id' and 'name' keys
+        """
+        return self._provider.get_supported_models()
 
     def validate_api_key(self) -> bool:
         """
-        Validate the API key by making a test request.
+        Validate the API key for the active provider.
 
         Returns:
             True if API key is valid, False otherwise
         """
-        try:
-            # Try to list models as a simple validation
-            self.client.models.list()
-            return True
-        except GroqError as e:
-            print(f"API key validation failed: {e}")
-            return False
-        except Exception as e:
-            print(f"API key validation error: {e}")
-            return False
+        return self._provider.validate_api_key()
+
+    def get_provider_name(self) -> str:
+        """
+        Get the display name of the active provider.
+
+        Returns:
+            Provider display name
+        """
+        return self._provider.display_name
+
+    def get_provider_type(self) -> ProviderType:
+        """
+        Get the type of the active provider.
+
+        Returns:
+            Provider type enum value
+        """
+        return self.provider_type
+
+    def get_capabilities(self):
+        """
+        Get the capabilities of the active provider.
+
+        Returns:
+            ProviderCapabilities instance
+        """
+        return self._provider.capabilities
 
     def estimate_cost(self, audio_duration_seconds: float) -> float:
         """
         Estimate transcription cost in USD.
 
-        Note: This is an estimate based on Groq's pricing.
-        Actual costs may vary.
+        Note: This is a rough estimate. Actual costs vary by provider.
 
         Args:
             audio_duration_seconds: Duration of audio in seconds
@@ -220,30 +316,45 @@ class TranscriptionService:
         Returns:
             Estimated cost in USD
         """
-        # Groq Whisper pricing (as of 2024)
-        # This is just an estimate - check Groq's current pricing
-        cost_per_minute = 0.0001  # Example: $0.0001 per minute
+        # Provider-specific pricing (rough estimates)
+        cost_per_minute = {
+            ProviderType.GROQ: 0.0001,
+            ProviderType.OPENAI: 0.006,
+            ProviderType.GOOGLE_CLOUD: 0.016,
+            ProviderType.ASSEMBLYAI: 0.0025,
+            ProviderType.DEEPGRAM: 0.0043,
+        }
 
+        rate = cost_per_minute.get(self.provider_type, 0.01)
         duration_minutes = audio_duration_seconds / 60.0
-        return duration_minutes * cost_per_minute
+        return duration_minutes * rate
 
     def get_last_transcription(self) -> Optional[str]:
-        """
-        Get the last successful transcription.
-
-        Returns:
-            Last transcribed text or None
-        """
+        """Get the last successful transcription text."""
         return self.last_transcription
 
-    def get_last_error(self) -> Optional[str]:
-        """
-        Get the last error message.
+    def get_last_result(self) -> Optional[TranscriptionResult]:
+        """Get the last successful transcription result with full details."""
+        return self.last_result
 
-        Returns:
-            Last error message or None
-        """
+    def get_last_error(self) -> Optional[str]:
+        """Get the last error message."""
         return self.last_error
+
+    @staticmethod
+    def get_available_providers() -> list[ProviderType]:
+        """Get list of all registered providers."""
+        return ProviderRegistry.get_available_providers()
+
+    @staticmethod
+    def get_installed_providers() -> list[ProviderType]:
+        """Get list of providers with installed SDKs."""
+        return ProviderRegistry.get_installed_providers()
+
+    @staticmethod
+    def is_provider_available(provider_type: ProviderType) -> bool:
+        """Check if a provider SDK is installed."""
+        return ProviderRegistry.is_provider_available(provider_type)
 
 
 class TranscriptionCache:

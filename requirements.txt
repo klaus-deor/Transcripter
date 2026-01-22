@@ -22,6 +22,26 @@ keyring>=24.0.0
 # Audio file handling
 pydub>=0.25.1
 
+# HTTP requests (for some providers)
+requests>=2.28.0
+
+# ==============================================
+# Transcription Provider SDKs (Optional)
+# ==============================================
+# Install only the providers you need:
+
+# OpenAI Whisper API
+openai>=1.0.0
+
+# AssemblyAI
+assemblyai>=0.30.0
+
+# Deepgram
+deepgram-sdk>=3.0.0
+
+# Google Cloud Speech-to-Text
+google-cloud-speech>=2.21.0
+
 # ==============================================
 # Platform-specific dependencies
 # ==============================================

@@ -20,6 +20,7 @@ from .hotkeys import HotkeyManager
 from .tray import TrayIcon, NotificationManager
 from .gui.settings import SettingsWindow
 from .gui.history import HistoryWindow
+from .providers import ProviderType
 
 
 class TranscripterApp:
@@ -76,15 +77,26 @@ class TranscripterApp:
             True if initialization successful, False otherwise
         """
         try:
-            # Check for API key
-            api_key = self.config_manager.get_api_key()
+            # Check for API key for the active provider
+            provider_type = self.config_manager.get_active_provider()
+            api_key = self.config_manager.get_api_key(provider_type)
             if not api_key:
-                print("No API key found. Please configure your Groq API key in settings.")
+                print(f"No API key found for {provider_type.value}. Please configure your API key in settings.")
                 # Show settings on first run
                 GLib.idle_add(self.show_settings)
             else:
-                # Initialize transcription service
-                self.transcription_service = TranscriptionService(api_key)
+                # Initialize transcription service with provider
+                fallback_provider = self.config_manager.get_fallback_provider()
+                fallback_api_key = None
+                if fallback_provider:
+                    fallback_api_key = self.config_manager.get_api_key(fallback_provider)
+
+                self.transcription_service = TranscriptionService(
+                    api_key=api_key,
+                    provider_type=provider_type,
+                    fallback_api_key=fallback_api_key,
+                    fallback_provider_type=fallback_provider,
+                )
 
             # Initialize audio recorder
             config = self.config_manager.config
@@ -205,28 +217,46 @@ class TranscripterApp:
         """Process transcription in background thread."""
         try:
             if not self.transcription_service:
-                api_key = self.config_manager.get_api_key()
+                provider_type = self.config_manager.get_active_provider()
+                api_key = self.config_manager.get_api_key(provider_type)
                 if not api_key:
                     GLib.idle_add(
                         self._show_error,
-                        "No API key configured. Please set your Groq API key in settings."
+                        f"No API key configured for {provider_type.value}. Please set your API key in settings."
                     )
                     return
 
-                self.transcription_service = TranscriptionService(api_key)
+                fallback_provider = self.config_manager.get_fallback_provider()
+                fallback_api_key = None
+                if fallback_provider:
+                    fallback_api_key = self.config_manager.get_api_key(fallback_provider)
+
+                self.transcription_service = TranscriptionService(
+                    api_key=api_key,
+                    provider_type=provider_type,
+                    fallback_api_key=fallback_api_key,
+                    fallback_provider_type=fallback_provider,
+                )
 
             config = self.config_manager.config
+            provider_config = self.config_manager.get_provider_config()
 
             # Update status
-            GLib.idle_add(self.tray_icon.set_status, "Transcribing...")
+            provider_name = self.transcription_service.get_provider_name()
+            GLib.idle_add(self.tray_icon.set_status, f"Transcribing ({provider_name})...")
+
+            # Get transcription parameters from provider config
+            model = getattr(provider_config, 'model', None)
+            temperature = getattr(provider_config, 'temperature', 0.0)
+            response_format = getattr(provider_config, 'response_format', 'text')
 
             # Transcribe with retry
             transcription = self.transcription_service.transcribe_file_with_retry(
                 file_path=self.temp_audio_file,
-                model=config.groq.model,
+                model=model,
                 language=config.general.language if config.general.language else None,
-                temperature=config.groq.temperature,
-                response_format=config.groq.response_format,
+                temperature=temperature,
+                response_format=response_format,
                 max_retries=3
             )
 
@@ -296,10 +326,22 @@ class TranscripterApp:
         # Update history window max items
         self.history_window.max_items = config.history.max_items
 
-        # Reinitialize transcription service if API key changed
-        api_key = self.config_manager.get_api_key()
+        # Reinitialize transcription service with new provider settings
+        provider_type = self.config_manager.get_active_provider()
+        api_key = self.config_manager.get_api_key(provider_type)
         if api_key:
-            self.transcription_service = TranscriptionService(api_key)
+            fallback_provider = self.config_manager.get_fallback_provider()
+            fallback_api_key = None
+            if fallback_provider:
+                fallback_api_key = self.config_manager.get_api_key(fallback_provider)
+
+            self.transcription_service = TranscriptionService(
+                api_key=api_key,
+                provider_type=provider_type,
+                fallback_api_key=fallback_api_key,
+                fallback_provider_type=fallback_provider,
+            )
+            print(f"Transcription service updated: {provider_type.value}")
 
     def _setup_signal_handlers(self) -> None:
         """Setup Unix signal handlers for external control."""

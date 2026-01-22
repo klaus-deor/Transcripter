@@ -38,12 +38,19 @@ stop_recording = "ctrl+alt+r"
 # Toggle mode: same key starts and stops (true) or separate keys (false)
 toggle_mode = true
 
-[groq]
-# Groq API settings
-# API key is stored securely in system keyring, not here
+[transcription]
+# Active transcription provider
+# Options: groq, openai, google_cloud, assemblyai, deepgram
+active_provider = "groq"
 
+# Fallback provider (used when active provider fails)
+# Leave empty to disable fallback
+fallback_provider = ""
+
+# Groq provider settings
+[transcription.groq]
 # Whisper model to use
-# Options: whisper-large-v3, whisper-large-v3-turbo
+# Options: whisper-large-v3-turbo, whisper-large-v3
 model = "whisper-large-v3-turbo"
 
 # Temperature for transcription (0.0 - 1.0)
@@ -54,6 +61,57 @@ response_format = "text"
 
 # Prompt to guide the model (optional)
 prompt = ""
+
+# OpenAI provider settings
+[transcription.openai]
+# Whisper model to use
+# Options: whisper-1
+model = "whisper-1"
+
+# Temperature for transcription (0.0 - 1.0)
+temperature = 0.0
+
+# Response format
+response_format = "text"
+
+# Prompt to guide the model (optional)
+prompt = ""
+
+# Google Cloud Speech-to-Text provider settings
+[transcription.google_cloud]
+# Model to use
+# Options: chirp_2, chirp, default
+model = "chirp_2"
+
+# Enable automatic punctuation
+enable_automatic_punctuation = true
+
+# Enable word time offsets
+enable_word_time_offsets = true
+
+# AssemblyAI provider settings
+[transcription.assemblyai]
+# Model tier to use
+# Options: best, nano
+model = "best"
+
+# Enable speaker diarization
+speaker_labels = false
+
+# Deepgram provider settings
+[transcription.deepgram]
+# Model to use
+# Options: nova-2, nova, whisper-large, whisper-medium, whisper-small, whisper-base, whisper-tiny
+model = "nova-2"
+
+# Add punctuation
+punctuate = true
+
+# Enable smart formatting
+smart_format = true
+
+# Enable speaker diarization
+diarize = false
 
 [clipboard]
 # Automatically paste after copying to clipboard
