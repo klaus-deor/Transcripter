@@ -1,19 +1,16 @@
-# Core dependencies
+# Core dependencies (all platforms)
 groq>=0.4.0
 sounddevice>=0.4.6
 numpy>=1.24.0
 scipy>=1.10.0
 pyperclip>=1.8.2
 
-# Keyboard handling
+# Keyboard handling (all platforms)
 pynput>=1.7.6
-keyboard>=0.13.5
-python-xlib>=0.33
 
-# GUI (GTK via PyGObject)
-# NOTE: PyGObject should be installed via system packages (python3-gi)
-# Uncomment the line below ONLY if you can't install system packages
-# PyGObject>=3.42.0
+# Cross-platform system tray and GUI
+pystray>=0.19.0
+Pillow>=10.0.0
 
 # Configuration management
 toml>=0.10.2
@@ -24,3 +21,16 @@ keyring>=24.0.0
 
 # Audio file handling
 pydub>=0.25.1
+
+# ==============================================
+# Platform-specific dependencies
+# ==============================================
+
+# Linux only - for GTK interface (optional)
+# Install via system package manager: sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+# python-xlib>=0.33  # Uncomment for X11 support on Linux
+
+# Windows only - for toast notifications (optional)
+# win10toast>=0.9  # Uncomment for Windows toast notifications
+
+# macOS - no additional dependencies needed
