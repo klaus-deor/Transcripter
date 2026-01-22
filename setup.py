@@ -18,11 +18,12 @@ if requirements_file.exists():
 setup(
     name="transcripter",
     version="1.0.0",
-    author="Transcripter Contributors",
+    author="Klaus Deor",
+    author_email="",
     description="Audio transcription tool for Linux using Groq API",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/transcripter",
+    url="https://github.com/klaus-deor/Transcripter",
     packages=find_packages(),
     include_package_data=True,
     package_data={

@@ -228,11 +228,22 @@ class TrayIcon:
         dialog = Gtk.AboutDialog()
         dialog.set_program_name(self.app_name)
         dialog.set_version("1.0.0")
-        dialog.set_comments("Audio transcription tool using Groq API")
-        dialog.set_website("https://github.com/yourusername/transcripter")
-        dialog.set_website_label("GitHub Repository")
+        dialog.set_comments(
+            "Ferramenta de transcrição de áudio para Linux.\n"
+            "Converte fala em texto usando a API Groq Whisper.\n\n"
+            "Grave áudio com um atalho de teclado e tenha o texto\n"
+            "automaticamente copiado para a área de transferência."
+        )
+        dialog.set_website("https://github.com/klaus-deor/Transcripter")
+        dialog.set_website_label("GitHub - klaus-deor/Transcripter")
         dialog.set_license_type(Gtk.License.MIT_X11)
-        dialog.set_authors(["Transcripter Contributors"])
+        dialog.set_copyright("Copyright © 2024 Klaus Deor")
+        dialog.set_authors([
+            "Klaus Deor <github.com/klaus-deor>",
+            "Claude Code (Anthropic AI Assistant)"
+        ])
+        dialog.set_documenters(["Klaus Deor"])
+        dialog.set_translator_credits("Klaus Deor")
 
         dialog.connect("response", lambda d, r: d.destroy())
         dialog.show()
