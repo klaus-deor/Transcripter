@@ -22,7 +22,7 @@
 
 ## What is Transcripter?
 
-**Transcripter** is a cross-platform audio transcription tool that converts your speech to text using the powerful Groq Whisper API.
+**Transcripter** is a cross-platform audio transcription tool that converts your speech to text using multiple transcription providers.
 
 With just a keyboard shortcut, you can:
 1. Record your voice
@@ -50,14 +50,28 @@ That simple!
 | Feature | Description |
 |---------|-------------|
 | **Global Hotkey** | Record audio from anywhere with `Ctrl+Alt+R` |
-| **Fast Transcription** | Uses Groq Whisper API (extremely fast) |
+| **Multi-Provider** | Choose from 5 transcription providers |
+| **Fallback Support** | Automatic fallback when primary provider fails |
+| **Fast Transcription** | Uses optimized APIs for quick results |
 | **Auto Clipboard** | Text automatically copied to clipboard |
 | **History** | Access previous transcriptions |
 | **Multi-language** | Supports Portuguese, English, Spanish, and more |
 | **System Tray** | Discrete icon in system tray |
 | **Notifications** | Visual feedback of status |
-| **Configurable** | Customize hotkeys, language, and more |
+| **Configurable** | Customize hotkeys, language, provider, and more |
 | **Cross-Platform** | Works on Linux, macOS, and Windows |
+
+---
+
+## Supported Transcription Providers
+
+| Provider | Models | Notes |
+|----------|--------|-------|
+| **Groq** | whisper-large-v3, whisper-large-v3-turbo | Fast and free tier available |
+| **OpenAI** | whisper-1 | High accuracy |
+| **AssemblyAI** | best, nano | Speaker diarization support |
+| **Deepgram** | nova-2, nova, whisper variants | Real-time capable |
+| **Google Cloud** | chirp_2, chirp, default | Enterprise-grade |
 
 ---
 
@@ -70,7 +84,7 @@ That simple!
 
 ### Dependencies
 - Python 3.8 or higher
-- Internet connection (for Groq API)
+- Internet connection (for transcription APIs)
 
 ---
 
@@ -204,11 +218,30 @@ transcripter-cross
 
 ## Getting Your API Key
 
+### Groq (Recommended - Free Tier)
 1. Go to [console.groq.com](https://console.groq.com/)
 2. Create a free account
 3. Generate an API Key
-4. Save the key
-5. On first run, configure your API Key in the Settings window
+
+### OpenAI
+1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. Create an account and add billing
+3. Generate an API Key
+
+### AssemblyAI
+1. Go to [assemblyai.com](https://www.assemblyai.com/)
+2. Create an account
+3. Get your API key from the dashboard
+
+### Deepgram
+1. Go to [console.deepgram.com](https://console.deepgram.com/)
+2. Create an account
+3. Generate an API Key
+
+### Google Cloud
+1. Go to [console.cloud.google.com](https://console.cloud.google.com/)
+2. Enable the Speech-to-Text API
+3. Create a service account and download the JSON credentials file
 
 ---
 
@@ -254,9 +287,17 @@ Right-click the tray icon:
 |-----|----------|
 | **General** | Notifications, Language, Autostart |
 | **Audio** | Input device (microphone) |
-| **Groq API** | API Key, Whisper Model |
+| **Transcription** | Provider selection, API Key, Model, Fallback provider |
 | **Hotkeys** | Recording shortcut |
 | **History** | Maximum history size |
+
+### Transcription Tab
+
+The Transcription tab allows you to:
+- **Select Provider**: Choose from Groq, OpenAI, AssemblyAI, Deepgram, or Google Cloud
+- **Configure API Key**: Each provider has its own secure API key storage
+- **Select Model**: Choose the transcription model for each provider
+- **Set Fallback**: Configure a backup provider if the primary fails
 
 ### Configuration File Location
 
@@ -265,6 +306,30 @@ Right-click the tray icon:
 | Linux | `~/.config/transcripter/config.toml` |
 | macOS | `~/Library/Application Support/Transcripter/config.toml` |
 | Windows | `%APPDATA%\Transcripter\config.toml` |
+
+### Example Configuration
+
+```toml
+[transcription]
+active_provider = "groq"
+fallback_provider = "openai"
+
+[transcription.groq]
+model = "whisper-large-v3-turbo"
+temperature = 0.0
+
+[transcription.openai]
+model = "whisper-1"
+
+[transcription.assemblyai]
+model = "best"
+
+[transcription.deepgram]
+model = "nova-2"
+
+[transcription.google_cloud]
+model = "chirp_2"
+```
 
 ---
 
@@ -302,8 +367,20 @@ See [WAYLAND_FIX.md](WAYLAND_FIX.md) for more details.
 ### API Key Error
 
 1. Verify the API Key is correct
-2. Confirm you have credits in your Groq account
+2. Confirm you have credits in your account
 3. Test your internet connection
+4. Try a different provider
+
+### Provider SDK Not Installed
+
+If you see "(SDK not installed)" next to a provider:
+```bash
+# Install specific provider SDK
+pip install openai          # For OpenAI
+pip install assemblyai      # For AssemblyAI
+pip install deepgram-sdk    # For Deepgram
+pip install google-cloud-speech  # For Google Cloud
+```
 
 ### Complete Diagnosis (Linux)
 
@@ -323,12 +400,21 @@ Transcripter/
 │   ├── main_cross.py           # Cross-platform entry point
 │   ├── config.py               # Configuration management
 │   ├── audio.py                # Audio recording
-│   ├── transcription.py        # Groq API integration
+│   ├── transcription.py        # Transcription service facade
 │   ├── clipboard.py            # Clipboard operations
 │   ├── hotkeys.py              # Global hotkey capture
 │   ├── tray.py                 # Linux GTK tray icon
 │   ├── tray_cross.py           # Cross-platform tray (pystray)
 │   ├── platform_utils.py       # Platform detection utilities
+│   ├── providers/              # Transcription providers
+│   │   ├── __init__.py         # Provider exports
+│   │   ├── base.py             # Abstract base class
+│   │   ├── factory.py          # Provider registry
+│   │   ├── groq.py             # Groq provider
+│   │   ├── openai_provider.py  # OpenAI provider
+│   │   ├── assemblyai.py       # AssemblyAI provider
+│   │   ├── deepgram.py         # Deepgram provider
+│   │   └── google_cloud.py     # Google Cloud provider
 │   ├── gui/                    # Linux GTK GUI
 │   │   ├── settings.py
 │   │   └── history.py
@@ -356,7 +442,11 @@ Transcripter/
 | **GTK 3** | Linux GUI interface |
 | **tkinter** | Cross-platform GUI |
 | **pystray** | Cross-platform system tray |
-| **Groq API** | Whisper transcription |
+| **Groq API** | Whisper transcription (default) |
+| **OpenAI API** | Whisper transcription |
+| **AssemblyAI API** | Transcription with diarization |
+| **Deepgram API** | Real-time transcription |
+| **Google Cloud** | Enterprise transcription |
 | **pynput** | Global hotkey capture |
 | **sounddevice** | Audio recording |
 | **keyring** | Secure API key storage |
@@ -407,7 +497,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Useful Links
 
 - [GitHub Repository](https://github.com/klaus-deor/Transcripter)
-- [Groq Console](https://console.groq.com/) - Get API Key
+- [Groq Console](https://console.groq.com/) - Get Groq API Key
+- [OpenAI Platform](https://platform.openai.com/) - Get OpenAI API Key
+- [AssemblyAI](https://www.assemblyai.com/) - Get AssemblyAI API Key
+- [Deepgram Console](https://console.deepgram.com/) - Get Deepgram API Key
+- [Google Cloud Console](https://console.cloud.google.com/) - Get Google Cloud credentials
 - [Report Bug](https://github.com/klaus-deor/Transcripter/issues)
 - [Request Feature](https://github.com/klaus-deor/Transcripter/issues)
 
