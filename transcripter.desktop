@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Transcripter
+Comment=Audio transcription tool using Groq API
+Exec=/home/klaus/Documentos/Saas/Transcripter/run_background.sh
+Icon=audio-input-microphone
+Terminal=false
+Categories=Utility;Audio;
+Keywords=transcription;audio;speech-to-text;groq;whisper;
+StartupNotify=false

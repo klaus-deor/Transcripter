@@ -1,0 +1,80 @@
+# Transcripter Configuration File
+
+[general]
+# Auto-start on system login
+autostart = false
+
+# Show notifications
+show_notifications = true
+
+# Language for transcription (ISO 639-1 code)
+# Leave empty for auto-detection
+language = "pt"
+
+[audio]
+# Audio sample rate (Hz)
+sample_rate = 16000
+
+# Audio channels (1 = mono, 2 = stereo)
+channels = 1
+
+# Audio format
+format = "wav"
+
+# Default audio input device (empty = system default)
+device_name = ""
+
+# Maximum recording duration in seconds (0 = unlimited)
+max_duration = 300
+
+[hotkeys]
+# Hotkey to start recording
+# Format: "modifier+key" (e.g., "ctrl+alt+r")
+start_recording = "ctrl+alt+r"
+
+# Hotkey to stop recording (can be same as start)
+stop_recording = "ctrl+alt+r"
+
+# Toggle mode: same key starts and stops (true) or separate keys (false)
+toggle_mode = true
+
+[groq]
+# Groq API settings
+# API key is stored securely in system keyring, not here
+
+# Whisper model to use
+# Options: whisper-large-v3, whisper-large-v3-turbo
+model = "whisper-large-v3-turbo"
+
+# Temperature for transcription (0.0 - 1.0)
+temperature = 0.0
+
+# Response format
+response_format = "text"
+
+# Prompt to guide the model (optional)
+prompt = ""
+
+[clipboard]
+# Automatically paste after copying to clipboard
+auto_paste = false
+
+# Clear clipboard after X seconds (0 = never)
+clear_after = 0
+
+[history]
+# Keep history of transcriptions
+enabled = true
+
+# Maximum number of items in history
+max_items = 50
+
+# Save history to file
+save_to_file = true
+
+[ui]
+# Theme (light/dark/system)
+theme = "system"
+
+# Show recording indicator icon
+show_recording_indicator = true

@@ -1,0 +1,26 @@
+# Core dependencies
+groq>=0.4.0
+sounddevice>=0.4.6
+numpy>=1.24.0
+scipy>=1.10.0
+pyperclip>=1.8.2
+
+# Keyboard handling
+pynput>=1.7.6
+keyboard>=0.13.5
+python-xlib>=0.33
+
+# GUI (GTK via PyGObject)
+# NOTE: PyGObject should be installed via system packages (python3-gi)
+# Uncomment the line below ONLY if you can't install system packages
+# PyGObject>=3.42.0
+
+# Configuration management
+toml>=0.10.2
+pydantic>=2.0.0
+
+# Secure storage for API keys
+keyring>=24.0.0
+
+# Audio file handling
+pydub>=0.25.1
