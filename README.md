@@ -5,7 +5,7 @@
 <h1 align="center">Transcripter</h1>
 
 <p align="center">
-  <strong>Transforme sua voz em texto instantaneamente!</strong>
+  <strong>Transform your voice into text instantly!</strong>
 </p>
 
 <p align="center">
@@ -15,88 +15,89 @@
   <a href="https://www.python.org/downloads/">
     <img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python"/>
   </a>
-  <a href="https://github.com/klaus-deor/Transcripter">
-    <img src="https://img.shields.io/badge/platform-Linux-orange.svg" alt="Platform"/>
-  </a>
+  <img src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-orange.svg" alt="Platform"/>
 </p>
 
 ---
 
-## O que é o Transcripter?
+## What is Transcripter?
 
-O **Transcripter** é uma ferramenta de transcrição de áudio para Linux que converte sua fala em texto usando a poderosa API Groq Whisper.
+**Transcripter** is a cross-platform audio transcription tool that converts your speech to text using the powerful Groq Whisper API.
 
-Com apenas um atalho de teclado, você pode:
-1. Gravar sua voz
-2. Ter o áudio transcrito automaticamente
-3. Receber o texto pronto na área de transferência
+With just a keyboard shortcut, you can:
+1. Record your voice
+2. Have the audio transcribed automatically
+3. Get the text copied to your clipboard
 
-Simples assim!
+That simple!
 
 ---
 
-## Demonstração Rápida
+## Quick Demo
 
 ```
-1. Pressione Ctrl+Alt+R → Começa a gravar
-2. Fale o que quiser
-3. Pressione Ctrl+Alt+R novamente → Para de gravar
-4. Aguarde 2-3 segundos
-5. Use Ctrl+V em qualquer lugar → Texto transcrito!
+1. Press Ctrl+Alt+R (or Ctrl+Option+R on Mac) → Start recording
+2. Speak whatever you want
+3. Press the hotkey again → Stop recording
+4. Wait 2-3 seconds
+5. Use Ctrl+V anywhere → Transcribed text!
 ```
 
 ---
 
-## Funcionalidades
+## Features
 
-| Recurso | Descrição |
-|---------|-----------|
-| **Atalho Global** | Grave áudio de qualquer lugar com `Ctrl+Alt+R` |
-| **Transcrição Rápida** | Usa Groq Whisper API (extremamente rápida) |
-| **Clipboard Automático** | Texto copiado automaticamente |
-| **Histórico** | Acesse transcrições anteriores |
-| **Multi-idioma** | Suporta Português, Inglês, Espanhol e mais |
-| **System Tray** | Ícone discreto na bandeja do sistema |
-| **Notificações** | Feedback visual do status |
-| **Configurável** | Personalize atalhos, idioma e mais |
-
----
-
-## Requisitos
-
-### Sistema Operacional
-- Linux (Ubuntu, Debian, Fedora, Arch, etc.)
-
-### Dependências
-- Python 3.8 ou superior
-- GTK 3
-- Conexão com internet (para API Groq)
+| Feature | Description |
+|---------|-------------|
+| **Global Hotkey** | Record audio from anywhere with `Ctrl+Alt+R` |
+| **Fast Transcription** | Uses Groq Whisper API (extremely fast) |
+| **Auto Clipboard** | Text automatically copied to clipboard |
+| **History** | Access previous transcriptions |
+| **Multi-language** | Supports Portuguese, English, Spanish, and more |
+| **System Tray** | Discrete icon in system tray |
+| **Notifications** | Visual feedback of status |
+| **Configurable** | Customize hotkeys, language, and more |
+| **Cross-Platform** | Works on Linux, macOS, and Windows |
 
 ---
 
-## Instalação
+## Requirements
 
-### Passo 1: Clone o Repositório
+### Supported Operating Systems
+- **Linux** (Ubuntu, Debian, Fedora, Arch, etc.)
+- **macOS** (10.14 Mojave or later)
+- **Windows** (10/11)
+
+### Dependencies
+- Python 3.8 or higher
+- Internet connection (for Groq API)
+
+---
+
+## Installation
+
+### Linux (Ubuntu/Debian)
+
+#### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/klaus-deor/Transcripter.git
 cd Transcripter
 ```
 
-### Passo 2: Instale as Dependências do Sistema
+#### Step 2: Install System Dependencies
 
-**Ubuntu/Debian:**
 ```bash
 ./install_system_deps.sh
 ```
 
-Ou manualmente:
+Or manually:
 ```bash
 sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
     gir1.2-appindicator3-0.1 portaudio19-dev xclip
 ```
 
-### Passo 3: Configure o Ambiente Python
+#### Step 3: Set Up Python Environment
 
 ```bash
 python3 -m venv --system-site-packages venv
@@ -105,34 +106,124 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### Passo 4: Obtenha sua API Key
-
-1. Acesse [console.groq.com](https://console.groq.com/)
-2. Crie uma conta (gratuita)
-3. Gere uma API Key
-4. Guarde a chave
-
-### Passo 5: Execute o Transcripter
+#### Step 4: Run
 
 ```bash
+# GTK version (native Linux experience)
 transcripter
-```
 
-Na primeira execução, configure sua API Key na janela de Settings.
+# Or cross-platform version
+transcripter-cross
+```
 
 ---
 
-## Como Usar
+### macOS
 
-### Método 1: Atalho de Teclado (Recomendado)
+#### Step 1: Clone the Repository
 
-| Ação | Atalho Padrão |
-|------|---------------|
-| Iniciar/Parar Gravação | `Ctrl + Alt + R` |
+```bash
+git clone https://github.com/klaus-deor/Transcripter.git
+cd Transcripter
+```
 
-### Método 2: Menu da Bandeja
+#### Step 2: Run the Installer
 
-Clique com botão direito no ícone:
+```bash
+./install_mac.sh
+```
+
+Or manually:
+
+```bash
+# Install portaudio (requires Homebrew)
+brew install portaudio
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -e .
+```
+
+#### Step 3: Run
+
+```bash
+source venv/bin/activate
+transcripter-cross
+```
+
+> **Note:** On macOS, you may need to grant accessibility permissions for global hotkeys to work. Go to System Preferences → Security & Privacy → Privacy → Accessibility and add your terminal or the app.
+
+---
+
+### Windows
+
+#### Step 1: Clone the Repository
+
+```powershell
+git clone https://github.com/klaus-deor/Transcripter.git
+cd Transcripter
+```
+
+#### Step 2: Run the Installer
+
+**Using PowerShell:**
+```powershell
+.\install_windows.ps1
+```
+
+**Or using Command Prompt:**
+```cmd
+install_windows.bat
+```
+
+Or manually:
+
+```powershell
+# Create virtual environment
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r requirements.txt
+pip install win10toast  # Optional: for toast notifications
+pip install -e .
+```
+
+#### Step 3: Run
+
+```powershell
+.\venv\Scripts\Activate.ps1
+transcripter-cross
+```
+
+---
+
+## Getting Your API Key
+
+1. Go to [console.groq.com](https://console.groq.com/)
+2. Create a free account
+3. Generate an API Key
+4. Save the key
+5. On first run, configure your API Key in the Settings window
+
+---
+
+## How to Use
+
+### Method 1: Keyboard Shortcut (Recommended)
+
+| Action | Shortcut |
+|--------|----------|
+| Start/Stop Recording | `Ctrl + Alt + R` (Windows/Linux) |
+| Start/Stop Recording | `Ctrl + Option + R` (macOS) |
+
+### Method 2: System Tray Menu
+
+Right-click the tray icon:
 
 ```
 ┌─────────────────────┐
@@ -150,85 +241,71 @@ Clique com botão direito no ícone:
 
 ---
 
-## Formas de Executar
+## Settings
 
-### Opção A: Como Aplicativo (Recomendado)
+### Accessing Settings
 
-```bash
-./install_desktop.sh
-```
+1. Right-click on the tray icon
+2. Select "Settings"
 
-Depois, encontre "Transcripter" no menu de aplicativos.
+### Available Options
 
-### Opção B: Em Background
+| Tab | Settings |
+|-----|----------|
+| **General** | Notifications, Language, Autostart |
+| **Audio** | Input device (microphone) |
+| **Groq API** | API Key, Whisper Model |
+| **Hotkeys** | Recording shortcut |
+| **History** | Maximum history size |
 
-```bash
-./run_background.sh    # Iniciar
-./stop_transcripter.sh # Parar
-```
+### Configuration File Location
 
-### Opção C: No Terminal
-
-```bash
-source venv/bin/activate
-transcripter
-```
-
----
-
-## Configurações
-
-### Acessando as Configurações
-
-1. Clique com botão direito no ícone da bandeja
-2. Selecione "Settings"
-
-### Opções Disponíveis
-
-| Aba | Configurações |
-|-----|---------------|
-| **General** | Notificações, Idioma, Autostart |
-| **Audio** | Dispositivo de entrada (microfone) |
-| **Groq API** | API Key, Modelo Whisper |
-| **Hotkeys** | Atalho de gravação |
-| **History** | Tamanho máximo do histórico |
-
-### Arquivo de Configuração
-
-As configurações são salvas em:
-```
-~/.config/transcripter/config.toml
-```
+| Platform | Path |
+|----------|------|
+| Linux | `~/.config/transcripter/config.toml` |
+| macOS | `~/Library/Application Support/Transcripter/config.toml` |
+| Windows | `%APPDATA%\Transcripter\config.toml` |
 
 ---
 
-## Solução de Problemas
+## Troubleshooting
 
-### Ícone não aparece na bandeja (GNOME)
+### Linux: Tray Icon Not Showing (GNOME)
 
 ```bash
 sudo apt install gnome-shell-extension-appindicator
 ```
-Depois, ative a extensão em "Extensões" ou "Tweaks".
+Then enable the extension in "Extensions" or "Tweaks".
 
-### Hotkeys não funcionam no Wayland
+### Linux: Hotkeys Not Working on Wayland
 
-O Wayland bloqueia hotkeys globais por segurança. Soluções:
+Wayland blocks global hotkeys for security. Solutions:
 
-**Opção 1:** Mude para X11 na tela de login
+**Option 1:** Switch to X11 at login screen
 
-**Opção 2:** Configure atalho nas configurações do sistema:
-- Comando: `/caminho/para/Transcripter/toggle_recording.sh`
+**Option 2:** Configure shortcut in system settings:
+- Command: `/path/to/Transcripter/toggle_recording.sh`
 
-Veja mais detalhes em [WAYLAND_FIX.md](WAYLAND_FIX.md)
+See [WAYLAND_FIX.md](WAYLAND_FIX.md) for more details.
 
-### Erro de API Key
+### macOS: Permission Issues
 
-1. Verifique se a API Key está correta
-2. Confirme que tem créditos na conta Groq
-3. Teste sua conexão com internet
+1. Go to **System Preferences** → **Security & Privacy** → **Privacy**
+2. Add Terminal (or your IDE) to **Accessibility**
+3. If using microphone, also add to **Microphone**
 
-### Diagnóstico Completo
+### Windows: Hotkeys Not Working
+
+- Run the application as Administrator
+- Check if any other application is using the same hotkey
+
+### API Key Error
+
+1. Verify the API Key is correct
+2. Confirm you have credits in your Groq account
+3. Test your internet connection
+
+### Complete Diagnosis (Linux)
 
 ```bash
 ./diagnose_hotkeys.sh
@@ -236,60 +313,69 @@ Veja mais detalhes em [WAYLAND_FIX.md](WAYLAND_FIX.md)
 
 ---
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 Transcripter/
-├── transcripter/           # Código fonte principal
-│   ├── __init__.py         # Informações do pacote
-│   ├── main.py             # Ponto de entrada
-│   ├── config.py           # Gerenciamento de configurações
-│   ├── audio.py            # Gravação de áudio
-│   ├── transcription.py    # Integração com Groq API
-│   ├── clipboard.py        # Operações de clipboard
-│   ├── hotkeys.py          # Captura de atalhos globais
-│   ├── tray.py             # Ícone da bandeja do sistema
-│   └── gui/
-│       ├── settings.py     # Janela de configurações
-│       └── history.py      # Janela de histórico
+├── transcripter/               # Main source code
+│   ├── __init__.py             # Package info
+│   ├── main.py                 # Linux GTK entry point
+│   ├── main_cross.py           # Cross-platform entry point
+│   ├── config.py               # Configuration management
+│   ├── audio.py                # Audio recording
+│   ├── transcription.py        # Groq API integration
+│   ├── clipboard.py            # Clipboard operations
+│   ├── hotkeys.py              # Global hotkey capture
+│   ├── tray.py                 # Linux GTK tray icon
+│   ├── tray_cross.py           # Cross-platform tray (pystray)
+│   ├── platform_utils.py       # Platform detection utilities
+│   ├── gui/                    # Linux GTK GUI
+│   │   ├── settings.py
+│   │   └── history.py
+│   └── gui_cross/              # Cross-platform GUI (tkinter)
+│       ├── settings.py
+│       └── history.py
 ├── config/
-│   └── default_config.toml # Configuração padrão
-├── requirements.txt        # Dependências Python
-├── setup.py                # Script de instalação
-├── run_background.sh       # Script para rodar em background
-├── stop_transcripter.sh    # Script para parar
-├── install_desktop.sh      # Integração com desktop
-└── README.md               # Este arquivo
+│   └── default_config.toml     # Default configuration
+├── requirements.txt            # Python dependencies
+├── setup.py                    # Installation script
+├── install_mac.sh              # macOS installer
+├── install_windows.bat         # Windows installer (batch)
+├── install_windows.ps1         # Windows installer (PowerShell)
+├── install_system_deps.sh      # Linux dependencies installer
+└── README.md                   # This file
 ```
 
 ---
 
-## Tecnologias Utilizadas
+## Technologies Used
 
-| Tecnologia | Uso |
+| Technology | Use |
 |------------|-----|
-| **Python 3** | Linguagem principal |
-| **GTK 3** | Interface gráfica |
-| **Groq API** | Transcrição com Whisper |
-| **pynput** | Captura de hotkeys |
-| **sounddevice** | Gravação de áudio |
-| **keyring** | Armazenamento seguro de API Key |
+| **Python 3** | Main language |
+| **GTK 3** | Linux GUI interface |
+| **tkinter** | Cross-platform GUI |
+| **pystray** | Cross-platform system tray |
+| **Groq API** | Whisper transcription |
+| **pynput** | Global hotkey capture |
+| **sounddevice** | Audio recording |
+| **keyring** | Secure API key storage |
 
 ---
 
-## Contribuindo
+## Contributing
 
-Contribuições são bem-vindas!
+Contributions are welcome!
 
-1. Faça um Fork do projeto
-2. Crie uma branch (`git checkout -b feature/NovaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona NovaFeature'`)
-4. Push para a branch (`git push origin feature/NovaFeature`)
-5. Abra um Pull Request
+1. Fork the project
+2. Create a branch (`git checkout -b feature/NewFeature`)
+3. Commit your changes (`git commit -m 'Add NewFeature'`)
+4. Push to the branch (`git push origin feature/NewFeature`)
+5. Open a Pull Request
 
 ---
 
-## Desenvolvedores
+## Developers
 
 <table>
   <tr>
@@ -312,25 +398,25 @@ Contribuições são bem-vindas!
 
 ---
 
-## Licença
+## License
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## Links Úteis
+## Useful Links
 
-- [Repositório GitHub](https://github.com/klaus-deor/Transcripter)
-- [Groq Console](https://console.groq.com/) - Obter API Key
-- [Reportar Bug](https://github.com/klaus-deor/Transcripter/issues)
-- [Solicitar Feature](https://github.com/klaus-deor/Transcripter/issues)
+- [GitHub Repository](https://github.com/klaus-deor/Transcripter)
+- [Groq Console](https://console.groq.com/) - Get API Key
+- [Report Bug](https://github.com/klaus-deor/Transcripter/issues)
+- [Request Feature](https://github.com/klaus-deor/Transcripter/issues)
 
 ---
 
 <p align="center">
-  Feito com ❤️ por <a href="https://github.com/klaus-deor">Klaus Deor</a> e <a href="https://claude.ai">Claude Code</a>
+  Made with love by <a href="https://github.com/klaus-deor">Klaus Deor</a> and <a href="https://claude.ai">Claude Code</a>
 </p>
 
 <p align="center">
-  <a href="#transcripter">⬆️ Voltar ao topo</a>
+  <a href="#transcripter">Back to top</a>
 </p>
