@@ -33,6 +33,26 @@ That simple!
 
 ---
 
+## Download (Recommended)
+
+**No installation required!** Just download and run:
+
+| Platform | Download | Notes |
+|----------|----------|-------|
+| **Windows** | [Transcripter.exe](https://github.com/klaus-deor/Transcripter/releases/latest) | Just download and double-click |
+| **Linux** | [AppImage](https://github.com/klaus-deor/Transcripter/releases/latest) | Make executable and run |
+| **macOS** | [Transcripter.app](https://github.com/klaus-deor/Transcripter/releases/latest) | Extract and move to Applications |
+
+### Quick Start
+1. Download for your platform from [Releases](https://github.com/klaus-deor/Transcripter/releases/latest)
+2. Run the application
+3. Click the tray icon → Settings → Enter your API key
+4. Press `Ctrl+Alt+R` to record!
+
+> **Tip:** [Groq](https://console.groq.com/) offers a free API key for transcription.
+
+---
+
 ## Quick Demo
 
 ```
@@ -88,7 +108,9 @@ That simple!
 
 ---
 
-## Installation
+## Installation (From Source)
+
+> **Note:** Most users should use the [pre-built downloads](#download-recommended) above. This section is for developers or advanced users who want to run from source.
 
 ### Linux (Ubuntu/Debian)
 
@@ -396,6 +418,7 @@ pip install google-cloud-speech  # For Google Cloud
 Transcripter/
 ├── transcripter/               # Main source code
 │   ├── __init__.py             # Package info
+│   ├── __main__.py             # Package entry point
 │   ├── main.py                 # Linux GTK entry point
 │   ├── main_cross.py           # Cross-platform entry point
 │   ├── config.py               # Configuration management
@@ -407,7 +430,6 @@ Transcripter/
 │   ├── tray_cross.py           # Cross-platform tray (pystray)
 │   ├── platform_utils.py       # Platform detection utilities
 │   ├── providers/              # Transcription providers
-│   │   ├── __init__.py         # Provider exports
 │   │   ├── base.py             # Abstract base class
 │   │   ├── factory.py          # Provider registry
 │   │   ├── groq.py             # Groq provider
@@ -416,21 +438,48 @@ Transcripter/
 │   │   ├── deepgram.py         # Deepgram provider
 │   │   └── google_cloud.py     # Google Cloud provider
 │   ├── gui/                    # Linux GTK GUI
-│   │   ├── settings.py
-│   │   └── history.py
 │   └── gui_cross/              # Cross-platform GUI (tkinter)
-│       ├── settings.py
-│       └── history.py
+├── packaging/                  # Packaging for distribution
+│   ├── pyinstaller/            # PyInstaller configuration
+│   ├── linux/                  # Linux AppImage files
+│   ├── windows/                # Windows installer files
+│   ├── macos/                  # macOS DMG files
+│   └── assets/                 # Icons for all platforms
+├── scripts/
+│   ├── build.py                # Main build script
+│   └── generate_icons.py       # Icon generator
+├── build_linux.sh              # One-click Linux build
+├── build_macos.sh              # One-click macOS build
+├── build_windows.bat           # One-click Windows build
 ├── config/
 │   └── default_config.toml     # Default configuration
 ├── requirements.txt            # Python dependencies
-├── setup.py                    # Installation script
-├── install_mac.sh              # macOS installer
-├── install_windows.bat         # Windows installer (batch)
-├── install_windows.ps1         # Windows installer (PowerShell)
-├── install_system_deps.sh      # Linux dependencies installer
-└── README.md                   # This file
+└── setup.py                    # Installation script
 ```
+
+---
+
+## Building Executables
+
+If you want to build the executables yourself:
+
+### Windows
+```cmd
+build_windows.bat
+```
+Output: `dist\Transcripter.exe`
+
+### Linux
+```bash
+./build_linux.sh
+```
+Output: `dist/Transcripter` and `dist/Transcripter-*.AppImage`
+
+### macOS
+```bash
+./build_macos.sh
+```
+Output: `dist/Transcripter.app` and `dist/Transcripter-*.dmg`
 
 ---
 
