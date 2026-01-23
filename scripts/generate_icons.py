@@ -13,11 +13,11 @@ except ImportError:
 
 def create_microphone_icon(size: int, recording: bool = False) -> Image.Image:
     """
-    Create a microphone icon.
+    Create a minimalist microphone icon.
 
     Args:
         size: Icon size in pixels (square)
-        recording: If True, create recording state icon (red)
+        recording: If True, create recording state icon (red dot)
 
     Returns:
         PIL Image object
@@ -25,72 +25,89 @@ def create_microphone_icon(size: int, recording: bool = False) -> Image.Image:
     image = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
-    # Scale factors based on size
-    padding = size // 16
+    # Scale factors
     center_x = size // 2
     center_y = size // 2
+    line_width = max(2, size // 12)
 
+    # Color - white for normal, red for recording
+    color = '#FF4444' if recording else '#FFFFFF'
+
+    # Microphone dimensions
+    mic_width = size // 3
+    mic_height = size // 2
+    mic_left = center_x - mic_width // 2
+    mic_right = mic_left + mic_width
+    mic_top = size // 8
+    mic_bottom = mic_top + mic_height
+
+    # Draw microphone head (rounded rectangle / pill shape)
+    # Top arc
+    draw.arc(
+        [mic_left, mic_top, mic_right, mic_top + mic_width],
+        start=180,
+        end=0,
+        fill=color,
+        width=line_width
+    )
+    # Left side
+    draw.line(
+        [(mic_left, mic_top + mic_width // 2), (mic_left, mic_bottom - mic_width // 4)],
+        fill=color,
+        width=line_width
+    )
+    # Right side
+    draw.line(
+        [(mic_right, mic_top + mic_width // 2), (mic_right, mic_bottom - mic_width // 4)],
+        fill=color,
+        width=line_width
+    )
+    # Bottom arc of mic head
+    draw.arc(
+        [mic_left, mic_bottom - mic_width // 2, mic_right, mic_bottom],
+        start=0,
+        end=180,
+        fill=color,
+        width=line_width
+    )
+
+    # Holder arc (U shape around microphone)
+    holder_padding = size // 6
+    holder_top = mic_bottom - mic_width // 3
+    holder_bottom = mic_bottom + size // 6
+    draw.arc(
+        [holder_padding, holder_top, size - holder_padding, holder_bottom + size // 8],
+        start=0,
+        end=180,
+        fill=color,
+        width=line_width
+    )
+
+    # Stand (vertical line from holder to base)
+    stand_top = holder_bottom
+    stand_bottom = size - size // 6
+    draw.line(
+        [(center_x, stand_top), (center_x, stand_bottom)],
+        fill=color,
+        width=line_width
+    )
+
+    # Base (horizontal line)
+    base_width = size // 3
+    draw.line(
+        [(center_x - base_width // 2, stand_bottom), (center_x + base_width // 2, stand_bottom)],
+        fill=color,
+        width=line_width
+    )
+
+    # If recording, add a small red dot indicator in corner
     if recording:
-        # Red circle background
+        dot_size = max(4, size // 8)
+        dot_x = size - dot_size - 2
+        dot_y = 2
         draw.ellipse(
-            [padding, padding, size - padding, size - padding],
-            fill='#E53935'  # Material Red 600
-        )
-        # White inner circle (pulsing indicator)
-        inner_padding = size // 4
-        draw.ellipse(
-            [inner_padding, inner_padding, size - inner_padding, size - inner_padding],
-            fill='#FFCDD2'  # Light red
-        )
-    else:
-        # Blue circle background
-        draw.ellipse(
-            [padding, padding, size - padding, size - padding],
-            fill='#1976D2'  # Material Blue 700
-        )
-
-        # Microphone body (white rounded rectangle)
-        mic_width = size // 4
-        mic_height = size // 3
-        mic_left = center_x - mic_width // 2
-        mic_top = size // 5
-
-        # Microphone head (oval)
-        draw.ellipse(
-            [mic_left, mic_top, mic_left + mic_width, mic_top + mic_height],
-            fill='white'
-        )
-
-        # Microphone stem
-        stem_width = mic_width // 2
-        stem_left = center_x - stem_width // 2
-        stem_top = mic_top + mic_height - size // 16
-        stem_bottom = center_y + size // 6
-        draw.rectangle(
-            [stem_left, stem_top, stem_left + stem_width, stem_bottom],
-            fill='white'
-        )
-
-        # Microphone arc
-        arc_padding = size // 5
-        arc_top = center_y - size // 8
-        arc_bottom = center_y + size // 5
-        draw.arc(
-            [arc_padding, arc_top, size - arc_padding, arc_bottom + size // 8],
-            start=0,
-            end=180,
-            fill='white',
-            width=max(2, size // 16)
-        )
-
-        # Stand/base
-        base_width = size // 8
-        base_left = center_x - base_width // 2
-        base_top = arc_bottom
-        base_bottom = center_y + size // 3
-        draw.rectangle(
-            [base_left, base_top, base_left + base_width, base_bottom],
-            fill='white'
+            [dot_x, dot_y, dot_x + dot_size, dot_y + dot_size],
+            fill='#FF0000'
         )
 
     return image
