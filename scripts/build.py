@@ -32,19 +32,19 @@ def check_dependencies():
     # Check PyInstaller
     try:
         import PyInstaller
-        print(f"✓ PyInstaller {PyInstaller.__version__} found")
+        print(f"[OK] PyInstaller {PyInstaller.__version__} found")
     except ImportError:
         missing.append("pyinstaller")
 
     # Check Pillow
     try:
         import PIL
-        print(f"✓ Pillow {PIL.__version__} found")
+        print(f"[OK] Pillow {PIL.__version__} found")
     except ImportError:
         missing.append("pillow")
 
     if missing:
-        print(f"\n✗ Missing dependencies: {', '.join(missing)}")
+        print(f"\n[ERROR] Missing dependencies: {', '.join(missing)}")
         print(f"  Install with: pip install {' '.join(missing)}")
         return False
 
@@ -76,7 +76,7 @@ def ensure_icons():
         print("\nGenerating icons...")
         subprocess.run([sys.executable, str(icons_script)], check=True)
     else:
-        print(f"✓ Icons found at {assets_dir}")
+        print(f"[OK] Icons found at {assets_dir}")
 
 
 def build(debug: bool = False):
@@ -105,7 +105,7 @@ def build(debug: bool = False):
     result = subprocess.run(cmd, cwd=str(PROJECT_ROOT))
 
     if result.returncode != 0:
-        print(f"\n✗ Build failed with exit code {result.returncode}")
+        print(f"\n[ERROR] Build failed with exit code {result.returncode}")
         sys.exit(result.returncode)
 
 
@@ -135,8 +135,8 @@ def print_summary():
             size = output.stat().st_size
 
         size_mb = size / (1024 * 1024)
-        print(f"\n✓ Output: {output}")
-        print(f"✓ Size: {size_mb:.1f} MB")
+        print(f"\n[OK] Output: {output}")
+        print(f"[OK] Size: {size_mb:.1f} MB")
 
         print("\nTo run:")
         if sys.platform == "darwin":
@@ -148,7 +148,7 @@ def print_summary():
             print("\nTo create AppImage (Linux):")
             print("  ./packaging/linux/build_appimage.sh")
     else:
-        print(f"\n✗ Output not found: {output}")
+        print(f"\n[ERROR] Output not found: {output}")
 
 
 def main():

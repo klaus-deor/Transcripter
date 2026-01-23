@@ -24,18 +24,30 @@ fi
 
 # Check for appimagetool
 APPIMAGETOOL=""
+APPIMAGETOOL_EXTRACTED=""
+
 if command -v appimagetool &> /dev/null; then
     APPIMAGETOOL="appimagetool"
-elif [ -f "$HOME/appimagetool-x86_64.AppImage" ]; then
-    APPIMAGETOOL="$HOME/appimagetool-x86_64.AppImage"
-elif [ -f "/tmp/appimagetool-x86_64.AppImage" ]; then
-    APPIMAGETOOL="/tmp/appimagetool-x86_64.AppImage"
 else
-    echo "appimagetool not found. Downloading..."
-    wget -q -O /tmp/appimagetool-x86_64.AppImage \
-        "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-    chmod +x /tmp/appimagetool-x86_64.AppImage
-    APPIMAGETOOL="/tmp/appimagetool-x86_64.AppImage"
+    # Download if not present
+    if [ ! -f "/tmp/appimagetool-x86_64.AppImage" ]; then
+        echo "appimagetool not found. Downloading..."
+        wget -q -O /tmp/appimagetool-x86_64.AppImage \
+            "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        chmod +x /tmp/appimagetool-x86_64.AppImage
+    fi
+
+    # Try to run directly first, if FUSE not available, extract it
+    if /tmp/appimagetool-x86_64.AppImage --version &> /dev/null; then
+        APPIMAGETOOL="/tmp/appimagetool-x86_64.AppImage"
+    else
+        echo "FUSE not available, extracting appimagetool..."
+        cd /tmp
+        /tmp/appimagetool-x86_64.AppImage --appimage-extract > /dev/null 2>&1
+        APPIMAGETOOL="/tmp/squashfs-root/AppRun"
+        APPIMAGETOOL_EXTRACTED="yes"
+        cd - > /dev/null
+    fi
 fi
 
 echo "Using appimagetool: $APPIMAGETOOL"
@@ -86,6 +98,11 @@ ARCH="$ARCH" "$APPIMAGETOOL" "$APPDIR" "$DIST_DIR/$APPIMAGE_NAME"
 
 # Clean up AppDir
 rm -rf "$APPDIR"
+
+# Clean up extracted appimagetool if used
+if [ -n "$APPIMAGETOOL_EXTRACTED" ] && [ -d "/tmp/squashfs-root" ]; then
+    rm -rf /tmp/squashfs-root
+fi
 
 echo ""
 echo "========================================"
