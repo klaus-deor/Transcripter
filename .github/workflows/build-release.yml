@@ -94,9 +94,10 @@ jobs:
 
       - name: Build installer
         run: |
-          cd packaging/windows
+          $env:PATH += ";C:\Program Files (x86)\NSIS"
+          cd packaging\windows
           makensis installer.nsi
-        shell: cmd
+        shell: pwsh
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4

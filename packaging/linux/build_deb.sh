@@ -135,10 +135,8 @@ chmod 755 "$DEB_DIR/DEBIAN/postrm"
 
 # Build the .deb package
 echo "Building .deb package..."
-dpkg-deb --build "$DEB_DIR"
-
-# Rename to standard format
-mv "$DEB_DIR.deb" "$DIST_DIR/transcripter_${VERSION}_${ARCH}.deb"
+DEB_OUTPUT="$DIST_DIR/transcripter_${VERSION}_${ARCH}.deb"
+dpkg-deb --build "$DEB_DIR" "$DEB_OUTPUT"
 
 # Clean up
 rm -rf "$DEB_DIR"
