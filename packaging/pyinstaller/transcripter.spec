@@ -63,6 +63,7 @@ hiddenimports = [
     'transcripter.tray',
     'transcripter.tray_cross',
     'transcripter.platform_utils',
+    'transcripter.main',
     'transcripter.main_cross',
 
     # GTK GUI (Linux)
