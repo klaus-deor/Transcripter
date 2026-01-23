@@ -60,9 +60,15 @@ hiddenimports = [
     'transcripter.clipboard',
     'transcripter.hotkeys',
     'transcripter.transcription',
+    'transcripter.tray',
     'transcripter.tray_cross',
     'transcripter.platform_utils',
     'transcripter.main_cross',
+
+    # GTK GUI (Linux)
+    'transcripter.gui',
+    'transcripter.gui.settings',
+    'transcripter.gui.history',
 
     # Providers
     'transcripter.providers',
@@ -113,11 +119,17 @@ else:  # Linux
         'pynput.keyboard._xorg',
         'pynput.mouse._xorg',
         'keyring.backends.SecretService',
+        # GTK/GI modules for native Linux tray
         'gi',
         'gi.repository',
         'gi.repository.Gtk',
         'gi.repository.GLib',
+        'gi.repository.GObject',
+        'gi.repository.Gdk',
+        'gi.repository.GdkPixbuf',
+        'gi.repository.Pango',
         'gi.repository.AppIndicator3',
+        'gi.repository.Notify',
     ])
 
 # Exclude unnecessary modules
