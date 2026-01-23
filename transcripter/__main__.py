@@ -7,10 +7,14 @@ def main():
     if sys.platform.startswith('linux'):
         # Use native GTK version on Linux (works better with GNOME)
         try:
+            print("[Transcripter] Loading GTK version...")
             from transcripter.main import main as gtk_main
+            print("[Transcripter] GTK version loaded successfully")
             gtk_main()
-        except ImportError:
+        except Exception as e:
             # Fallback to cross-platform if GTK not available
+            print(f"[Transcripter] GTK version failed: {e}")
+            print("[Transcripter] Falling back to cross-platform version...")
             from transcripter.main_cross import main as cross_main
             cross_main()
     else:
