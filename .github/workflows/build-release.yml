@@ -39,11 +39,6 @@ jobs:
             libdbus-1-dev \
             libsecret-1-dev
 
-      - name: Generate icons
-        run: |
-          pip install pillow
-          python scripts/generate_icons.py
-
       - name: Build .deb package (Python)
         run: |
           chmod +x packaging/linux/build_deb_python.sh
@@ -74,9 +69,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller pillow pywin32
-
-      - name: Generate icons
-        run: python scripts/generate_icons.py
 
       - name: Build executable
         run: python scripts/build.py
@@ -120,11 +112,8 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller pillow
 
-      - name: Generate icons
-        run: |
-          python scripts/generate_icons.py
-          # Create .icns from iconset
-          iconutil -c icns packaging/macos/transcripter.iconset -o packaging/macos/transcripter.icns || true
+      - name: Create .icns from iconset
+        run: iconutil -c icns packaging/macos/transcripter.iconset -o packaging/macos/transcripter.icns || true
 
       - name: Build executable
         run: python scripts/build.py
