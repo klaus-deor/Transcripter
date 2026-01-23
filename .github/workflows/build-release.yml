@@ -52,18 +52,17 @@ jobs:
       - name: Build executable
         run: python scripts/build.py
 
-      - name: Build AppImage
+      - name: Build .deb package
         run: |
-          chmod +x packaging/linux/build_appimage.sh
-          ./packaging/linux/build_appimage.sh
+          chmod +x packaging/linux/build_deb.sh
+          ./packaging/linux/build_deb.sh
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: |
-            dist/Transcripter
-            dist/Transcripter-*.AppImage
+            dist/transcripter_*.deb
           retention-days: 30
 
   build-windows:
@@ -90,11 +89,20 @@ jobs:
       - name: Build executable
         run: python scripts/build.py
 
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Build installer
+        run: |
+          cd packaging/windows
+          makensis installer.nsi
+        shell: cmd
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/Transcripter.exe
+          path: dist/Transcripter-*-Setup.exe
           retention-days: 30
 
   build-macos:
@@ -157,17 +165,13 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          # Linux
-          if [ -f artifacts/linux-build/Transcripter ]; then
-            cp artifacts/linux-build/Transcripter release/Transcripter-linux-x64
-            chmod +x release/Transcripter-linux-x64
+          # Linux (.deb installer)
+          if ls artifacts/linux-build/transcripter_*.deb 1> /dev/null 2>&1; then
+            cp artifacts/linux-build/transcripter_*.deb release/
           fi
-          if ls artifacts/linux-build/Transcripter-*.AppImage 1> /dev/null 2>&1; then
-            cp artifacts/linux-build/Transcripter-*.AppImage release/
-          fi
-          # Windows
-          if [ -f artifacts/windows-build/Transcripter.exe ]; then
-            cp artifacts/windows-build/Transcripter.exe release/Transcripter-windows-x64.exe
+          # Windows (installer)
+          if ls artifacts/windows-build/Transcripter-*-Setup.exe 1> /dev/null 2>&1; then
+            cp artifacts/windows-build/Transcripter-*-Setup.exe release/
           fi
           # macOS
           if [ -d artifacts/macos-build/Transcripter.app ]; then
@@ -199,11 +203,9 @@ jobs:
 
             | Platform | File | Notes |
             |----------|------|-------|
-            | **Linux** | `Transcripter-linux-x64` | Standalone binary |
-            | **Linux** | `Transcripter-*.AppImage` | AppImage (recommended) |
-            | **Windows** | `Transcripter-windows-x64.exe` | Standalone executable |
-            | **macOS** | `Transcripter-macos-x64.app.zip` | Application bundle |
-            | **macOS** | `Transcripter-*.dmg` | DMG installer |
+            | **Linux** | `transcripter_*.deb` | Duplo clique para instalar (Ubuntu/Debian) |
+            | **Windows** | `Transcripter-*-Setup.exe` | Instalador - Next, Next, Finish |
+            | **macOS** | `Transcripter-*.dmg` | Arraste para Applications |
 
             ### Requirements
 

@@ -33,21 +33,21 @@ That simple!
 
 ---
 
-## Download (Recommended)
+## Download
 
-**No installation required!** Just download and run:
+Baixe o instalador para seu sistema:
 
-| Platform | Download | Notes |
-|----------|----------|-------|
-| **Windows** | [Transcripter.exe](https://github.com/klaus-deor/Transcripter/releases/latest) | Just download and double-click |
-| **Linux** | [AppImage](https://github.com/klaus-deor/Transcripter/releases/latest) | Make executable and run |
-| **macOS** | [Transcripter.app](https://github.com/klaus-deor/Transcripter/releases/latest) | Extract and move to Applications |
+| Platform | Download | Instalacao |
+|----------|----------|------------|
+| **Windows** | [Transcripter-Setup.exe](https://github.com/klaus-deor/Transcripter/releases/latest) | Duplo clique → Next → Next → Finish |
+| **Linux** | [transcripter.deb](https://github.com/klaus-deor/Transcripter/releases/latest) | Duplo clique para instalar (Ubuntu/Debian) |
+| **macOS** | [Transcripter.dmg](https://github.com/klaus-deor/Transcripter/releases/latest) | Arraste para Applications |
 
-### Quick Start
-1. Download for your platform from [Releases](https://github.com/klaus-deor/Transcripter/releases/latest)
-2. Run the application
-3. Click the tray icon → Settings → Enter your API key
-4. Press `Ctrl+Alt+R` to record!
+### Primeiro Uso
+1. Baixe e instale o Transcripter
+2. Abra pelo menu de aplicativos
+3. Clique no icone da bandeja → Settings → Configure sua API key
+4. Pressione `Ctrl+Alt+R` para gravar!
 
 > **Tip:** [Groq](https://console.groq.com/) offers a free API key for transcription.
 
