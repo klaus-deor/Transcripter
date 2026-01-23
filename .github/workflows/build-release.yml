@@ -189,35 +189,37 @@ jobs:
           body: |
             ## Deor Transcripter v${{ steps.version.outputs.VERSION }}
 
+            Cross-platform audio transcription tool powered by AI.
+
             ### Downloads
 
-            | Plataforma | Arquivo | Instalação |
-            |------------|---------|------------|
-            | **Linux** | `.deb` | Duplo clique para instalar (Ubuntu/Debian) |
-            | **Windows** | `.exe` | Instalador - Next, Next, Finish |
-            | **macOS** | `.dmg` | Arraste para Applications |
+            | Platform | File | Installation |
+            |----------|------|--------------|
+            | **Linux** | `.deb` | Double-click to install (Ubuntu/Debian) |
+            | **Windows** | `.exe` | Installer - Next, Next, Finish |
+            | **macOS** | `.dmg` | Drag to Applications |
 
-            ### Requisitos
+            ### Requirements
 
-            - **Linux**: Ubuntu 20.04+ ou Debian 11+
-            - **Windows**: Windows 10 ou superior
-            - **macOS**: macOS 10.13 ou superior
+            - **Linux**: Ubuntu 20.04+ or Debian 11+
+            - **Windows**: Windows 10 or later
+            - **macOS**: macOS 10.13 or later
 
-            ### Configuração
+            ### Setup
 
-            1. Obtenha uma API key de um dos provedores:
-               - [Groq](https://console.groq.com/) (recomendado - tier gratuito disponível)
+            1. Get an API key from one of the providers:
+               - [Groq](https://console.groq.com/) (recommended - free tier available)
                - [OpenAI](https://platform.openai.com/)
                - [AssemblyAI](https://www.assemblyai.com/)
                - [Deepgram](https://console.deepgram.com/)
                - [Google Cloud](https://console.cloud.google.com/)
 
-            2. Abra o Deor Transcripter e vá em Configurações
+            2. Open Deor Transcripter and go to **Settings**
 
-            3. Insira sua API key e selecione o provedor
+            3. Enter your API key and select the provider
 
-            ### Uso
+            ### Usage
 
-            - Use o atalho configurado (padrão: `Ctrl+Alt+R`) para iniciar/parar gravação
-            - O texto transcrito é copiado automaticamente para a área de transferência
-            - No Wayland/GNOME, configure o atalho pelo sistema (o app faz isso automaticamente)
+            - Press `Ctrl+Alt+R` (default) to start/stop recording
+            - Transcribed text is automatically copied to clipboard
+            - On Wayland/GNOME, the app auto-configures a system shortcut

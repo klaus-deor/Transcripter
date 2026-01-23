@@ -2,14 +2,14 @@
   <img src="https://img.icons8.com/fluency/96/000000/microphone.png" alt="Transcripter Logo"/>
 </p>
 
-<h1 align="center">Transcripter</h1>
+<h1 align="center">Deor Transcripter</h1>
 
 <p align="center">
   <strong>Transform your voice into text instantly!</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/klaus-deor/Transcripter/blob/main/LICENSE">
+  <a href="https://github.com/klaus-deor/Deor-Transcripter/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"/>
   </a>
   <a href="https://www.python.org/downloads/">
@@ -35,19 +35,19 @@ That simple!
 
 ## Download
 
-Baixe o instalador para seu sistema:
+Download the installer for your system:
 
-| Platform | Download | Instalacao |
-|----------|----------|------------|
-| **Windows** | [Transcripter-Setup.exe](https://github.com/klaus-deor/Transcripter/releases/latest) | Duplo clique → Next → Next → Finish |
-| **Linux** | [transcripter.deb](https://github.com/klaus-deor/Transcripter/releases/latest) | Duplo clique para instalar (Ubuntu/Debian) |
-| **macOS** | [Transcripter.dmg](https://github.com/klaus-deor/Transcripter/releases/latest) | Arraste para Applications |
+| Platform | Download | Installation |
+|----------|----------|--------------|
+| **Windows** | [Transcripter-Setup.exe](https://github.com/klaus-deor/Deor-Transcripter/releases/latest) | Double-click → Next → Next → Finish |
+| **Linux** | [deor-transcripter.deb](https://github.com/klaus-deor/Deor-Transcripter/releases/latest) | Double-click to install (Ubuntu/Debian) |
+| **macOS** | [Transcripter.dmg](https://github.com/klaus-deor/Deor-Transcripter/releases/latest) | Drag to Applications |
 
-### Primeiro Uso
-1. Baixe e instale o Transcripter
-2. Abra pelo menu de aplicativos
-3. Clique no icone da bandeja → Settings → Configure sua API key
-4. Pressione `Ctrl+Alt+R` para gravar!
+### First Use
+1. Download and install Deor Transcripter
+2. Open from the applications menu
+3. Click the tray icon → Settings → Configure your API key
+4. Press `Ctrl+Alt+R` to record!
 
 > **Tip:** [Groq](https://console.groq.com/) offers a free API key for transcription.
 
@@ -117,7 +117,7 @@ Baixe o instalador para seu sistema:
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/klaus-deor/Transcripter.git
+git clone https://github.com/klaus-deor/Deor-Transcripter.git
 cd Transcripter
 ```
 
@@ -159,7 +159,7 @@ transcripter-cross
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/klaus-deor/Transcripter.git
+git clone https://github.com/klaus-deor/Deor-Transcripter.git
 cd Transcripter
 ```
 
@@ -200,7 +200,7 @@ transcripter-cross
 #### Step 1: Clone the Repository
 
 ```powershell
-git clone https://github.com/klaus-deor/Transcripter.git
+git clone https://github.com/klaus-deor/Deor-Transcripter.git
 cd Transcripter
 ```
 
@@ -545,14 +545,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Useful Links
 
-- [GitHub Repository](https://github.com/klaus-deor/Transcripter)
+- [GitHub Repository](https://github.com/klaus-deor/Deor-Transcripter)
 - [Groq Console](https://console.groq.com/) - Get Groq API Key
 - [OpenAI Platform](https://platform.openai.com/) - Get OpenAI API Key
 - [AssemblyAI](https://www.assemblyai.com/) - Get AssemblyAI API Key
 - [Deepgram Console](https://console.deepgram.com/) - Get Deepgram API Key
 - [Google Cloud Console](https://console.cloud.google.com/) - Get Google Cloud credentials
-- [Report Bug](https://github.com/klaus-deor/Transcripter/issues)
-- [Request Feature](https://github.com/klaus-deor/Transcripter/issues)
+- [Report Bug](https://github.com/klaus-deor/Deor-Transcripter/issues)
+- [Request Feature](https://github.com/klaus-deor/Deor-Transcripter/issues)
 
 ---
 
