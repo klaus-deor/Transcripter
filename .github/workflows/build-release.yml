@@ -1,0 +1,230 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 1.0.0)'
+        required: false
+        default: '1.0.0'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libportaudio2 \
+            portaudio19-dev \
+            libgirepository1.0-dev \
+            gir1.2-appindicator3-0.1 \
+            libdbus-1-dev \
+            libsecret-1-dev \
+            wget
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller pillow
+
+      - name: Generate icons
+        run: python scripts/generate_icons.py
+
+      - name: Build executable
+        run: python scripts/build.py
+
+      - name: Build AppImage
+        run: |
+          chmod +x packaging/linux/build_appimage.sh
+          ./packaging/linux/build_appimage.sh
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            dist/Transcripter
+            dist/Transcripter-*.AppImage
+          retention-days: 30
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller pillow pywin32
+
+      - name: Generate icons
+        run: python scripts/generate_icons.py
+
+      - name: Build executable
+        run: python scripts/build.py
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: dist/Transcripter.exe
+          retention-days: 30
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          brew install portaudio create-dmg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller pillow
+
+      - name: Generate icons
+        run: |
+          python scripts/generate_icons.py
+          # Create .icns from iconset
+          iconutil -c icns packaging/macos/transcripter.iconset -o packaging/macos/transcripter.icns || true
+
+      - name: Build executable
+        run: python scripts/build.py
+
+      - name: Create DMG
+        run: |
+          chmod +x packaging/macos/create_dmg.sh
+          ./packaging/macos/create_dmg.sh || true
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: |
+            dist/Transcripter.app
+            dist/Transcripter-*.dmg
+          retention-days: 30
+
+  create-release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          # Linux
+          if [ -f artifacts/linux-build/Transcripter ]; then
+            cp artifacts/linux-build/Transcripter release/Transcripter-linux-x64
+            chmod +x release/Transcripter-linux-x64
+          fi
+          if ls artifacts/linux-build/Transcripter-*.AppImage 1> /dev/null 2>&1; then
+            cp artifacts/linux-build/Transcripter-*.AppImage release/
+          fi
+          # Windows
+          if [ -f artifacts/windows-build/Transcripter.exe ]; then
+            cp artifacts/windows-build/Transcripter.exe release/Transcripter-windows-x64.exe
+          fi
+          # macOS
+          if [ -d artifacts/macos-build/Transcripter.app ]; then
+            cd artifacts/macos-build
+            zip -r ../../release/Transcripter-macos-x64.app.zip Transcripter.app
+            cd ../..
+          fi
+          if ls artifacts/macos-build/Transcripter-*.dmg 1> /dev/null 2>&1; then
+            cp artifacts/macos-build/Transcripter-*.dmg release/
+          fi
+          ls -la release/
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Transcripter v${{ steps.version.outputs.VERSION }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          files: release/*
+          body: |
+            ## Transcripter v${{ steps.version.outputs.VERSION }}
+
+            ### Downloads
+
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | **Linux** | `Transcripter-linux-x64` | Standalone binary |
+            | **Linux** | `Transcripter-*.AppImage` | AppImage (recommended) |
+            | **Windows** | `Transcripter-windows-x64.exe` | Standalone executable |
+            | **macOS** | `Transcripter-macos-x64.app.zip` | Application bundle |
+            | **macOS** | `Transcripter-*.dmg` | DMG installer |
+
+            ### Requirements
+
+            - **Linux**: GTK3, libsecret, PortAudio
+            - **Windows**: Windows 10 or later
+            - **macOS**: macOS 10.13 or later
+
+            ### API Key Setup
+
+            1. Get an API key from your preferred provider:
+               - [Groq](https://console.groq.com/) (recommended - free tier available)
+               - [OpenAI](https://platform.openai.com/)
+               - [AssemblyAI](https://www.assemblyai.com/)
+               - [Deepgram](https://console.deepgram.com/)
+               - [Google Cloud](https://console.cloud.google.com/)
+
+            2. Launch Transcripter and open Settings
+
+            3. Enter your API key and select your provider
+
+            ### Usage
+
+            - Press `Ctrl+Alt+R` (or `Cmd+Alt+R` on macOS) to start/stop recording
+            - Transcribed text is automatically copied to clipboard

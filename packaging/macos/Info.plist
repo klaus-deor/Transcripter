@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>Transcripter</string>
+    <key>CFBundleExecutable</key>
+    <string>Transcripter</string>
+    <key>CFBundleIconFile</key>
+    <string>transcripter.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.klausdeor.transcripter</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Transcripter</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.13</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Transcripter needs microphone access to record audio for transcription.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Transcripter needs accessibility access for global hotkeys.</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2024 Klaus Deor. All rights reserved.</string>
+</dict>
+</plist>

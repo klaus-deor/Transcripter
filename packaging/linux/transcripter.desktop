@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Transcripter
+Comment=Audio transcription tool with multiple AI providers
+Exec=Transcripter
+Icon=transcripter
+Type=Application
+Categories=AudioVideo;Audio;Utility;
+Keywords=transcription;audio;speech;voice;whisper;groq;openai;
+StartupNotify=true
+Terminal=false

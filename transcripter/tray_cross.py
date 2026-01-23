@@ -39,6 +39,25 @@ class CrossPlatformTray:
         self.is_recording = False
         self._status = "Idle"
 
+    def _get_resource_path(self, relative_path: str) -> Path:
+        """
+        Get path to resource, works for dev and PyInstaller.
+
+        Args:
+            relative_path: Path relative to the package directory
+
+        Returns:
+            Absolute path to the resource
+        """
+        import sys
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable (PyInstaller)
+            base_path = Path(sys._MEIPASS)
+        else:
+            # Running from source
+            base_path = Path(__file__).parent
+        return base_path / relative_path
+
     def _create_image(self, recording: bool = False) -> 'Image.Image':
         """
         Create an icon image.
@@ -50,11 +69,10 @@ class CrossPlatformTray:
             PIL Image object
         """
         # Try to load icon from file first
-        package_dir = Path(__file__).parent
         if recording:
-            icon_path = package_dir / "gui" / "icons" / "recording.png"
+            icon_path = self._get_resource_path("gui/icons/recording.png")
         else:
-            icon_path = package_dir / "gui" / "icons" / "transcripter.png"
+            icon_path = self._get_resource_path("gui/icons/transcripter.png")
 
         if icon_path.exists():
             try:

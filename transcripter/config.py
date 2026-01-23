@@ -149,9 +149,14 @@ class ConfigManager:
 
     def _get_default_config_path(self) -> Path:
         """Get the default configuration file path."""
-        # Look for default config in the package directory
-        package_dir = Path(__file__).parent.parent
-        return package_dir / "config" / "default_config.toml"
+        import sys
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable (PyInstaller)
+            base_path = Path(sys._MEIPASS)
+        else:
+            # Running from source
+            base_path = Path(__file__).parent.parent
+        return base_path / "config" / "default_config.toml"
 
     def _migrate_legacy_config(self, config_data: dict) -> dict:
         """Migrate old config format to new format with transcription section."""
