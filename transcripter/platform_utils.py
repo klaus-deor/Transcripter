@@ -140,3 +140,47 @@ def get_notification_backend() -> str:
     elif is_windows():
         return 'toast'
     return 'none'
+
+
+def is_wayland() -> bool:
+    """
+    Check if running on Wayland display server.
+
+    Returns:
+        True if running on Wayland, False otherwise
+    """
+    if not is_linux():
+        return False
+
+    session_type = os.environ.get('XDG_SESSION_TYPE', '').lower()
+    return session_type == 'wayland'
+
+
+def is_x11() -> bool:
+    """
+    Check if running on X11 display server.
+
+    Returns:
+        True if running on X11, False otherwise
+    """
+    if not is_linux():
+        return False
+
+    session_type = os.environ.get('XDG_SESSION_TYPE', '').lower()
+    return session_type == 'x11'
+
+
+def get_display_server() -> str:
+    """
+    Get the current display server on Linux.
+
+    Returns:
+        'wayland', 'x11', or 'unknown'
+    """
+    if not is_linux():
+        return 'not_linux'
+
+    session_type = os.environ.get('XDG_SESSION_TYPE', '').lower()
+    if session_type in ('wayland', 'x11'):
+        return session_type
+    return 'unknown'

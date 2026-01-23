@@ -15,7 +15,7 @@ from .hotkeys import HotkeyManager
 from .tray_cross import CrossPlatformTray, CrossPlatformNotificationManager
 from .gui_cross.settings import SettingsWindow
 from .gui_cross.history import HistoryWindow
-from .platform_utils import is_windows, is_linux, is_macos
+from .platform_utils import is_windows, is_linux, is_macos, is_wayland
 from .providers import ProviderType
 
 
@@ -392,6 +392,22 @@ class TranscripterCrossApp:
 
         print("Transcripter started successfully!")
         print(f"Hotkey: {self.config_manager.config.hotkeys.start_recording}")
+
+        # Wayland warning
+        if is_wayland():
+            print("")
+            print("=" * 50)
+            print("WARNING: Wayland detected!")
+            print("Global hotkeys are blocked by Wayland for security.")
+            print("")
+            print("To use hotkeys, configure a system shortcut:")
+            print("  Settings > Keyboard > Custom Shortcuts")
+            print("  Command: toggle_recording.sh")
+            print("")
+            print("Or switch to X11 at the login screen.")
+            print("See WAYLAND_FIX.md for details.")
+            print("=" * 50)
+            print("")
 
         # Run tray in separate thread
         tray_thread = self.tray.run_detached()

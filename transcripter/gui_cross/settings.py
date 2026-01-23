@@ -8,6 +8,7 @@ from ..config import ConfigManager
 from ..audio import AudioRecorder
 from ..hotkeys import HotkeyValidator
 from ..providers import ProviderType, ProviderRegistry
+from ..platform_utils import is_wayland
 
 
 # Provider display names and info URLs
@@ -437,6 +438,34 @@ class SettingsWindow:
         frame.columnconfigure(1, weight=1)
 
         row = 0
+
+        # Wayland warning
+        if is_wayland():
+            warning_frame = ttk.Frame(frame)
+            warning_frame.grid(row=row, column=0, columnspan=2, sticky='ew', padx=10, pady=10)
+
+            # Warning box with yellow/orange background
+            warning_label = tk.Label(
+                warning_frame,
+                text=(
+                    "Wayland Detected - Hotkeys Limited\n\n"
+                    "Wayland blocks global hotkeys for security.\n"
+                    "Configure a system shortcut instead:\n\n"
+                    "Settings > Keyboard > Custom Shortcuts\n"
+                    "Command: toggle_recording.sh\n\n"
+                    "See WAYLAND_FIX.md for details."
+                ),
+                bg='#FFF3CD',
+                fg='#856404',
+                relief='solid',
+                borderwidth=1,
+                padx=15,
+                pady=10,
+                justify='left',
+                anchor='w'
+            )
+            warning_label.pack(fill='x', expand=True)
+            row += 1
 
         # Hotkey entry
         ttk.Label(frame, text="Recording Hotkey:").grid(
