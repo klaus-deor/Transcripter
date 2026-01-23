@@ -9,6 +9,7 @@ from ..config import ConfigManager
 from ..audio import AudioRecorder
 from ..hotkeys import HotkeyValidator
 from ..providers import ProviderType, ProviderRegistry
+from ..i18n import t, get_available_languages, set_language, get_language
 
 
 # Provider display names and info URLs
@@ -46,6 +47,124 @@ PROVIDER_INFO = {
 }
 
 
+class HotkeyCaptureDialog(Gtk.Dialog):
+    """Dialog for capturing keyboard shortcuts."""
+
+    def __init__(self, parent: Gtk.Window):
+        super().__init__(
+            title="Capturar Atalho",
+            transient_for=parent,
+            flags=0
+        )
+        self.add_buttons(
+            "Cancelar", Gtk.ResponseType.CANCEL,
+            "OK", Gtk.ResponseType.OK
+        )
+        self.set_default_size(350, 150)
+
+        self.captured_hotkey = ""
+        self.modifiers = set()
+        self.key = ""
+
+        box = self.get_content_area()
+        box.set_spacing(10)
+        box.set_border_width(15)
+
+        # Instructions
+        label = Gtk.Label(label="Pressione a combinação de teclas desejada:")
+        box.pack_start(label, False, False, 0)
+
+        # Display current capture
+        self.capture_label = Gtk.Label()
+        self.capture_label.set_markup("<big><b>Aguardando...</b></big>")
+        box.pack_start(self.capture_label, True, True, 0)
+
+        # Info
+        info_label = Gtk.Label()
+        info_label.set_markup("<small>Use Ctrl, Alt, Shift ou Super + uma tecla</small>")
+        box.pack_start(info_label, False, False, 0)
+
+        self.connect("key-press-event", self._on_key_press)
+        self.connect("key-release-event", self._on_key_release)
+
+        self.show_all()
+
+    def _on_key_press(self, widget, event) -> bool:
+        """Handle key press."""
+        keyval = event.keyval
+        keyname = Gdk.keyval_name(keyval)
+        state = event.state
+
+        if not keyname:
+            return True
+
+        keyname_lower = keyname.lower()
+
+        # Check modifier state from event (more reliable)
+        if state & Gdk.ModifierType.CONTROL_MASK:
+            self.modifiers.add('ctrl')
+        if state & Gdk.ModifierType.MOD1_MASK:  # Alt
+            self.modifiers.add('alt')
+        if state & Gdk.ModifierType.SHIFT_MASK:
+            self.modifiers.add('shift')
+        if state & Gdk.ModifierType.SUPER_MASK or state & Gdk.ModifierType.MOD4_MASK:
+            self.modifiers.add('super')
+
+        # Also check for modifier keys being pressed
+        if keyname_lower in ('control_l', 'control_r'):
+            self.modifiers.add('ctrl')
+        elif keyname_lower in ('alt_l', 'alt_r'):
+            self.modifiers.add('alt')
+        elif keyname_lower in ('shift_l', 'shift_r'):
+            self.modifiers.add('shift')
+        elif keyname_lower in ('super_l', 'super_r', 'meta_l', 'meta_r'):
+            self.modifiers.add('super')
+        elif keyname_lower not in ('caps_lock', 'num_lock', 'scroll_lock'):
+            # Regular key (not a modifier or lock key)
+            self.key = keyname_lower
+
+        self._update_display()
+        return True
+
+    def _on_key_release(self, widget, event) -> bool:
+        """Handle key release - finalize capture when modifiers are released."""
+        keyval = event.keyval
+        keyname = Gdk.keyval_name(keyval)
+
+        if not keyname:
+            return True
+
+        keyname_lower = keyname.lower()
+
+        # If a modifier is released and we have a key, finalize
+        if keyname_lower in ('control_l', 'control_r', 'alt_l', 'alt_r',
+                            'shift_l', 'shift_r', 'super_l', 'super_r',
+                            'meta_l', 'meta_r'):
+            if self.modifiers and self.key:
+                self._finalize_hotkey()
+
+        return True
+
+    def _update_display(self) -> None:
+        """Update the display with current capture."""
+        parts = list(self.modifiers)
+        if self.key:
+            parts.append(self.key)
+
+        if parts:
+            display = "+".join(parts)
+            self.capture_label.set_markup(f"<big><b>{display}</b></big>")
+        else:
+            self.capture_label.set_markup("<big><b>Aguardando...</b></big>")
+
+    def _finalize_hotkey(self) -> None:
+        """Finalize the hotkey capture."""
+        if self.modifiers and self.key:
+            parts = sorted(list(self.modifiers), key=lambda x: ['ctrl', 'alt', 'shift', 'super'].index(x) if x in ['ctrl', 'alt', 'shift', 'super'] else 99)
+            parts.append(self.key)
+            self.captured_hotkey = "+".join(parts)
+
+
 class SettingsWindow:
     """Settings window for configuring the application."""
 
@@ -61,6 +180,7 @@ class SettingsWindow:
         self.on_settings_changed: Optional[Callable] = None
 
         # General widgets
+        self.ui_language_combo: Optional[Gtk.ComboBoxText] = None
         self.language_combo: Optional[Gtk.ComboBoxText] = None
         self.notifications_check: Optional[Gtk.CheckButton] = None
         self.autostart_check: Optional[Gtk.CheckButton] = None
@@ -97,7 +217,7 @@ class SettingsWindow:
 
     def _create_window(self) -> None:
         """Create the settings window and its widgets."""
-        self.window = Gtk.Window(title="Transcripter Settings")
+        self.window = Gtk.Window(title=t("settings_title"))
         self.window.set_default_size(650, 550)
         self.window.set_position(Gtk.WindowPosition.CENTER)
         self.window.connect("delete-event", self._on_close)
@@ -112,11 +232,11 @@ class SettingsWindow:
         main_box.pack_start(notebook, True, True, 0)
 
         # Create tabs
-        notebook.append_page(self._create_general_tab(), Gtk.Label(label="General"))
-        notebook.append_page(self._create_audio_tab(), Gtk.Label(label="Audio"))
-        notebook.append_page(self._create_transcription_tab(), Gtk.Label(label="Transcription"))
-        notebook.append_page(self._create_hotkeys_tab(), Gtk.Label(label="Hotkeys"))
-        notebook.append_page(self._create_history_tab(), Gtk.Label(label="History"))
+        notebook.append_page(self._create_general_tab(), Gtk.Label(label=t("general")))
+        notebook.append_page(self._create_audio_tab(), Gtk.Label(label=t("audio")))
+        notebook.append_page(self._create_transcription_tab(), Gtk.Label(label=t("providers")))
+        notebook.append_page(self._create_hotkeys_tab(), Gtk.Label(label=t("hotkeys")))
+        notebook.append_page(self._create_history_tab(), Gtk.Label(label=t("history")))
 
         # Button box
         button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -124,12 +244,12 @@ class SettingsWindow:
         main_box.pack_start(button_box, False, False, 0)
 
         # Save button
-        save_button = Gtk.Button(label="Save")
+        save_button = Gtk.Button(label=t("save"))
         save_button.connect("clicked", self._on_save_clicked)
         button_box.pack_start(save_button, False, False, 0)
 
         # Cancel button
-        cancel_button = Gtk.Button(label="Cancel")
+        cancel_button = Gtk.Button(label=t("cancel"))
         cancel_button.connect("clicked", self._on_cancel_clicked)
         button_box.pack_start(cancel_button, False, False, 0)
 
@@ -138,36 +258,68 @@ class SettingsWindow:
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         box.set_border_width(10)
 
+        # UI Language
+        ui_lang_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        ui_lang_label = Gtk.Label(label=t("ui_language") + ":")
+        ui_lang_label.set_xalign(0)
+        ui_lang_box.pack_start(ui_lang_label, False, False, 0)
+
+        self.ui_language_combo = Gtk.ComboBoxText()
+        for code, name in get_available_languages().items():
+            self.ui_language_combo.append(code, name)
+        self.ui_language_combo.set_active_id(get_language())
+        self.ui_language_combo.connect("changed", self._on_ui_language_changed)
+        ui_lang_box.pack_start(self.ui_language_combo, True, True, 0)
+        box.pack_start(ui_lang_box, False, False, 0)
+
         # Notifications
-        self.notifications_check = Gtk.CheckButton(label="Show notifications")
+        self.notifications_check = Gtk.CheckButton(label=t("show_notifications"))
         box.pack_start(self.notifications_check, False, False, 0)
 
         # Autostart
-        self.autostart_check = Gtk.CheckButton(label="Start on system login")
+        self.autostart_check = Gtk.CheckButton(label=t("start_on_login"))
         box.pack_start(self.autostart_check, False, False, 0)
 
-        # Language
+        # Transcription Language
         lang_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        lang_label = Gtk.Label(label="Transcription language:")
+        lang_label = Gtk.Label(label=t("transcription_language") + ":")
         lang_label.set_xalign(0)
         lang_box.pack_start(lang_label, False, False, 0)
 
         self.language_combo = Gtk.ComboBoxText()
-        self.language_combo.append("auto", "Auto-detect")
+        self.language_combo.append("", t("auto_detect"))
         self.language_combo.append("en", "English")
-        self.language_combo.append("pt", "Portuguese")
-        self.language_combo.append("es", "Spanish")
-        self.language_combo.append("fr", "French")
-        self.language_combo.append("de", "German")
-        self.language_combo.append("it", "Italian")
-        self.language_combo.append("ja", "Japanese")
-        self.language_combo.append("ko", "Korean")
-        self.language_combo.append("zh", "Chinese")
+        self.language_combo.append("pt", "Português")
+        self.language_combo.append("es", "Español")
+        self.language_combo.append("fr", "Français")
+        self.language_combo.append("de", "Deutsch")
+        self.language_combo.append("it", "Italiano")
+        self.language_combo.append("ja", "日本語")
+        self.language_combo.append("ko", "한국어")
+        self.language_combo.append("zh", "中文")
+        self.language_combo.append("ru", "Русский")
+        self.language_combo.append("ar", "العربية")
         lang_box.pack_start(self.language_combo, True, True, 0)
 
         box.pack_start(lang_box, False, False, 0)
 
         return box
+
+    def _on_ui_language_changed(self, combo: Gtk.ComboBoxText) -> None:
+        """Handle UI language change."""
+        lang = combo.get_active_id()
+        if lang:
+            set_language(lang)
+            # Show message that restart is needed
+            dialog = Gtk.MessageDialog(
+                transient_for=self.window,
+                flags=0,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.OK,
+                text="Reinicie o aplicativo para aplicar o novo idioma."
+            )
+            dialog.run()
+            dialog.destroy()
 
     def _create_audio_tab(self) -> Gtk.Box:
         """Create the audio settings tab."""
@@ -176,12 +328,12 @@ class SettingsWindow:
 
         # Audio device selection
         device_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        device_label = Gtk.Label(label="Microphone:")
+        device_label = Gtk.Label(label=t("microphone") + ":")
         device_label.set_xalign(0)
         device_box.pack_start(device_label, False, False, 0)
 
         self.device_combo = Gtk.ComboBoxText()
-        self.device_combo.append("", "System Default")
+        self.device_combo.append("", t("system_default"))
 
         # List available audio devices
         try:
@@ -400,35 +552,98 @@ class SettingsWindow:
 
     def _create_hotkeys_tab(self) -> Gtk.Box:
         """Create the hotkeys settings tab."""
+        import os
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         box.set_border_width(10)
 
-        # Hotkey entry
-        hotkey_label = Gtk.Label(label="Recording Hotkey:")
+        # Wayland warning
+        self.is_wayland = os.environ.get('XDG_SESSION_TYPE') == 'wayland'
+        if self.is_wayland:
+            warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+
+            warning_label = Gtk.Label()
+            warning_label.set_markup(
+                f'<span foreground="orange" weight="bold">⚠ {t("wayland_detected")}</span>\n'
+                f'<small>{t("wayland_warning_settings")}</small>'
+            )
+            warning_label.set_xalign(0)
+            warning_label.set_line_wrap(True)
+            warning_box.pack_start(warning_label, False, False, 0)
+
+            # Button to configure system shortcut
+            self.config_system_button = Gtk.Button(label="Configurar Atalho do Sistema")
+            self.config_system_button.connect("clicked", self._on_configure_system_shortcut)
+            warning_box.pack_start(self.config_system_button, False, False, 5)
+
+            box.pack_start(warning_box, False, False, 0)
+            box.pack_start(Gtk.Separator(), False, False, 5)
+
+        # Hotkey capture
+        hotkey_label = Gtk.Label(label=t("hotkey") + ":")
         hotkey_label.set_xalign(0)
         box.pack_start(hotkey_label, False, False, 0)
 
+        hotkey_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+
         self.hotkey_entry = Gtk.Entry()
-        self.hotkey_entry.set_placeholder_text("e.g., ctrl+alt+r")
-        box.pack_start(self.hotkey_entry, False, False, 0)
+        self.hotkey_entry.set_placeholder_text("Clique em 'Capturar' e pressione as teclas")
+        self.hotkey_entry.set_editable(False)
+        hotkey_box.pack_start(self.hotkey_entry, True, True, 0)
+
+        capture_button = Gtk.Button(label="Capturar")
+        capture_button.connect("clicked", self._on_capture_hotkey)
+        hotkey_box.pack_start(capture_button, False, False, 0)
+
+        box.pack_start(hotkey_box, False, False, 0)
 
         # Toggle mode
-        self.toggle_mode_check = Gtk.CheckButton(
-            label="Toggle mode (same key starts and stops recording)"
-        )
+        self.toggle_mode_check = Gtk.CheckButton(label=t("toggle_mode"))
         box.pack_start(self.toggle_mode_check, False, False, 0)
 
         # Info
         info_label = Gtk.Label()
         info_label.set_markup(
-            "<small>Format: modifier+key (e.g., ctrl+alt+r)\n"
-            "Valid modifiers: ctrl, alt, shift, super\n"
-            "Valid keys: a-z, 0-9, F1-F12, space, etc.</small>"
+            "<small>Clique em 'Capturar' e pressione a combinação de teclas desejada.\n"
+            "Ex: Ctrl+Alt+R, Ctrl+Shift+T, etc.</small>"
         )
         info_label.set_xalign(0)
         box.pack_start(info_label, False, False, 0)
 
         return box
+
+    def _on_capture_hotkey(self, button: Gtk.Button) -> None:
+        """Open dialog to capture hotkey."""
+        dialog = HotkeyCaptureDialog(self.window)
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.OK and dialog.captured_hotkey:
+            self.hotkey_entry.set_text(dialog.captured_hotkey)
+
+        dialog.destroy()
+
+    def _on_configure_system_shortcut(self, button: Gtk.Button) -> None:
+        """Configure system shortcut for Wayland."""
+        from ..gnome_shortcut import create_gnome_shortcut
+
+        # Get the configured hotkey
+        hotkey = self.hotkey_entry.get_text().strip()
+        if not hotkey:
+            hotkey = "ctrl+alt+r"  # Default
+
+        success, msg = create_gnome_shortcut(hotkey=hotkey)
+
+        if success:
+            msg = f"Atalho '{hotkey.upper()}' configurado no sistema!"
+
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            flags=0,
+            message_type=Gtk.MessageType.INFO if success else Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text=msg
+        )
+        dialog.run()
+        dialog.destroy()
 
     def _create_history_tab(self) -> Gtk.Box:
         """Create the history settings tab."""
@@ -436,12 +651,12 @@ class SettingsWindow:
         box.set_border_width(10)
 
         # Enable history
-        self.history_check = Gtk.CheckButton(label="Keep transcription history")
+        self.history_check = Gtk.CheckButton(label=t("enable_history"))
         box.pack_start(self.history_check, False, False, 0)
 
         # Max history items
         history_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        history_label = Gtk.Label(label="Maximum history items:")
+        history_label = Gtk.Label(label=t("max_history_items") + ":")
         history_label.set_xalign(0)
         history_box.pack_start(history_label, False, False, 0)
 
@@ -458,12 +673,16 @@ class SettingsWindow:
         """Load current settings into the widgets."""
         config = self.config_manager.config
 
+        # UI Language
+        ui_lang = config.general.ui_language if config.general.ui_language else get_language()
+        self.ui_language_combo.set_active_id(ui_lang)
+
         # General
         self.notifications_check.set_active(config.general.show_notifications)
         self.autostart_check.set_active(config.general.autostart)
 
-        # Set language
-        lang = config.general.language if config.general.language else "auto"
+        # Set transcription language
+        lang = config.general.language if config.general.language else ""
         self.language_combo.set_active_id(lang)
 
         # Audio
@@ -501,11 +720,15 @@ class SettingsWindow:
             # Save settings
             config = self.config_manager.config
 
+            # UI Language
+            ui_lang = self.ui_language_combo.get_active_id()
+            config.general.ui_language = ui_lang if ui_lang else ""
+
             # General
             config.general.show_notifications = self.notifications_check.get_active()
             config.general.autostart = self.autostart_check.get_active()
             lang = self.language_combo.get_active_id()
-            config.general.language = "" if lang == "auto" else lang
+            config.general.language = lang if lang else ""
 
             # Audio
             config.audio.device_name = self.device_combo.get_active_id() or ""

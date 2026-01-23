@@ -37,32 +37,24 @@ jobs:
             libgirepository1.0-dev \
             gir1.2-appindicator3-0.1 \
             libdbus-1-dev \
-            libsecret-1-dev \
-            wget
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller pillow
+            libsecret-1-dev
 
       - name: Generate icons
-        run: python scripts/generate_icons.py
-
-      - name: Build executable
-        run: python scripts/build.py
-
-      - name: Build .deb package
         run: |
-          chmod +x packaging/linux/build_deb.sh
-          ./packaging/linux/build_deb.sh
+          pip install pillow
+          python scripts/generate_icons.py
+
+      - name: Build .deb package (Python)
+        run: |
+          chmod +x packaging/linux/build_deb_python.sh
+          ./packaging/linux/build_deb_python.sh
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: |
-            dist/transcripter_*.deb
+            dist/*.deb
           retention-days: 30
 
   build-windows:
@@ -103,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/Transcripter-*-Setup.exe
+          path: dist/*Setup*.exe
           retention-days: 30
 
   build-macos:
@@ -147,8 +139,8 @@ jobs:
         with:
           name: macos-build
           path: |
-            dist/Transcripter.app
-            dist/Transcripter-*.dmg
+            dist/*.app
+            dist/*.dmg
           retention-days: 30
 
   create-release:
@@ -166,23 +158,20 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
+          ls -la artifacts/
+          ls -la artifacts/linux-build/ || true
+          ls -la artifacts/windows-build/ || true
+          ls -la artifacts/macos-build/ || true
+
           # Linux (.deb installer)
-          if ls artifacts/linux-build/transcripter_*.deb 1> /dev/null 2>&1; then
-            cp artifacts/linux-build/transcripter_*.deb release/
-          fi
+          cp artifacts/linux-build/*.deb release/ 2>/dev/null || true
+
           # Windows (installer)
-          if ls artifacts/windows-build/Transcripter-*-Setup.exe 1> /dev/null 2>&1; then
-            cp artifacts/windows-build/Transcripter-*-Setup.exe release/
-          fi
+          cp artifacts/windows-build/*Setup*.exe release/ 2>/dev/null || true
+
           # macOS
-          if [ -d artifacts/macos-build/Transcripter.app ]; then
-            cd artifacts/macos-build
-            zip -r ../../release/Transcripter-macos-x64.app.zip Transcripter.app
-            cd ../..
-          fi
-          if ls artifacts/macos-build/Transcripter-*.dmg 1> /dev/null 2>&1; then
-            cp artifacts/macos-build/Transcripter-*.dmg release/
-          fi
+          cp artifacts/macos-build/*.dmg release/ 2>/dev/null || true
+
           ls -la release/
 
       - name: Get version from tag
@@ -192,42 +181,43 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Transcripter v${{ steps.version.outputs.VERSION }}
-          draft: true
+          name: Deor Transcripter v${{ steps.version.outputs.VERSION }}
+          draft: false
           prerelease: false
           generate_release_notes: true
           files: release/*
           body: |
-            ## Transcripter v${{ steps.version.outputs.VERSION }}
+            ## Deor Transcripter v${{ steps.version.outputs.VERSION }}
 
             ### Downloads
 
-            | Platform | File | Notes |
-            |----------|------|-------|
-            | **Linux** | `transcripter_*.deb` | Duplo clique para instalar (Ubuntu/Debian) |
-            | **Windows** | `Transcripter-*-Setup.exe` | Instalador - Next, Next, Finish |
-            | **macOS** | `Transcripter-*.dmg` | Arraste para Applications |
+            | Plataforma | Arquivo | Instalação |
+            |------------|---------|------------|
+            | **Linux** | `.deb` | Duplo clique para instalar (Ubuntu/Debian) |
+            | **Windows** | `.exe` | Instalador - Next, Next, Finish |
+            | **macOS** | `.dmg` | Arraste para Applications |
 
-            ### Requirements
+            ### Requisitos
 
-            - **Linux**: GTK3, libsecret, PortAudio
-            - **Windows**: Windows 10 or later
-            - **macOS**: macOS 10.13 or later
+            - **Linux**: Ubuntu 20.04+ ou Debian 11+
+            - **Windows**: Windows 10 ou superior
+            - **macOS**: macOS 10.13 ou superior
 
-            ### API Key Setup
+            ### Configuração
 
-            1. Get an API key from your preferred provider:
-               - [Groq](https://console.groq.com/) (recommended - free tier available)
+            1. Obtenha uma API key de um dos provedores:
+               - [Groq](https://console.groq.com/) (recomendado - tier gratuito disponível)
                - [OpenAI](https://platform.openai.com/)
                - [AssemblyAI](https://www.assemblyai.com/)
                - [Deepgram](https://console.deepgram.com/)
                - [Google Cloud](https://console.cloud.google.com/)
 
-            2. Launch Transcripter and open Settings
+            2. Abra o Deor Transcripter e vá em Configurações
 
-            3. Enter your API key and select your provider
+            3. Insira sua API key e selecione o provedor
 
-            ### Usage
+            ### Uso
 
-            - Press `Ctrl+Alt+R` (or `Cmd+Alt+R` on macOS) to start/stop recording
-            - Transcribed text is automatically copied to clipboard
+            - Use o atalho configurado (padrão: `Ctrl+Alt+R`) para iniciar/parar gravação
+            - O texto transcrito é copiado automaticamente para a área de transferência
+            - No Wayland/GNOME, configure o atalho pelo sistema (o app faz isso automaticamente)

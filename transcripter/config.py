@@ -14,7 +14,8 @@ class GeneralConfig(BaseModel):
     """General application settings."""
     autostart: bool = False
     show_notifications: bool = True
-    language: str = "pt"
+    language: str = ""  # Transcription language (empty = auto-detect)
+    ui_language: str = ""  # UI language (empty = auto-detect from system)
 
 
 class AudioConfig(BaseModel):

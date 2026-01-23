@@ -9,6 +9,8 @@ from typing import Callable, Optional
 import os
 from pathlib import Path
 
+from .i18n import t
+
 
 class TrayIcon:
     """Manages the system tray icon and menu."""
@@ -49,12 +51,17 @@ class TrayIcon:
         Returns:
             Full path to the icon, or fallback to system icon
         """
-        # Try to find icon in package directory
+        # Try multiple locations
         package_dir = Path(__file__).parent
-        icon_path = package_dir / "gui" / "icons" / icon_name
+        possible_paths = [
+            package_dir / "gui" / "icons" / icon_name,
+            Path("/opt/transcripter/transcripter/gui/icons") / icon_name,
+            Path("/usr/share/icons/hicolor/64x64/apps") / icon_name.replace('.png', '') / ".png",
+        ]
 
-        if icon_path.exists():
-            return str(icon_path)
+        for icon_path in possible_paths:
+            if icon_path.exists():
+                return str(icon_path)
 
         # Fallback to system icons
         icon_theme_map = {
@@ -87,7 +94,7 @@ class TrayIcon:
             self.menu = Gtk.Menu()
 
             # Status item (non-clickable)
-            self.status_menu_item = Gtk.MenuItem(label="Status: Idle")
+            self.status_menu_item = Gtk.MenuItem(label=f"Status: {t('status_idle')}")
             self.status_menu_item.set_sensitive(False)
             self.menu.append(self.status_menu_item)
 
@@ -95,7 +102,7 @@ class TrayIcon:
             self.menu.append(Gtk.SeparatorMenuItem())
 
             # Start/Stop Recording
-            self.record_menu_item = Gtk.MenuItem(label="Start Recording")
+            self.record_menu_item = Gtk.MenuItem(label=t("start_recording"))
             self.record_menu_item.connect("activate", self._on_record_clicked)
             self.menu.append(self.record_menu_item)
 
@@ -103,17 +110,17 @@ class TrayIcon:
             self.menu.append(Gtk.SeparatorMenuItem())
 
             # History
-            history_item = Gtk.MenuItem(label="History")
+            history_item = Gtk.MenuItem(label=t("history"))
             history_item.connect("activate", self._on_history_clicked)
             self.menu.append(history_item)
 
             # Settings
-            settings_item = Gtk.MenuItem(label="Settings")
+            settings_item = Gtk.MenuItem(label=t("settings"))
             settings_item.connect("activate", self._on_settings_clicked)
             self.menu.append(settings_item)
 
             # About
-            about_item = Gtk.MenuItem(label="About")
+            about_item = Gtk.MenuItem(label=t("about"))
             about_item.connect("activate", self._on_about_clicked)
             self.menu.append(about_item)
 
@@ -121,7 +128,7 @@ class TrayIcon:
             self.menu.append(Gtk.SeparatorMenuItem())
 
             # Quit
-            quit_item = Gtk.MenuItem(label="Quit")
+            quit_item = Gtk.MenuItem(label=t("quit"))
             quit_item.connect("activate", self._on_quit_clicked)
             self.menu.append(quit_item)
 
@@ -182,17 +189,26 @@ class TrayIcon:
 
         if self.indicator:
             if is_recording:
-                self.indicator.set_icon(self._get_icon_path("recording.png"))
+                icon_path = self._get_icon_path("recording.png")
+                # Use set_icon_full for custom icons with description
+                if icon_path.startswith('/'):
+                    self.indicator.set_icon_full(icon_path, "Recording")
+                else:
+                    self.indicator.set_icon(icon_path)
                 if self.record_menu_item:
-                    self.record_menu_item.set_label("Stop Recording")
+                    self.record_menu_item.set_label(t("stop_recording"))
                 if self.status_menu_item:
-                    self.status_menu_item.set_label("Status: Recording")
+                    self.status_menu_item.set_label(f"Status: {t('status_recording')}")
             else:
-                self.indicator.set_icon(self._get_icon_path("idle.png"))
+                icon_path = self._get_icon_path("transcripter.png")
+                if icon_path.startswith('/'):
+                    self.indicator.set_icon_full(icon_path, "Transcripter")
+                else:
+                    self.indicator.set_icon(icon_path)
                 if self.record_menu_item:
-                    self.record_menu_item.set_label("Start Recording")
+                    self.record_menu_item.set_label(t("start_recording"))
                 if self.status_menu_item:
-                    self.status_menu_item.set_label("Status: Idle")
+                    self.status_menu_item.set_label(f"Status: {t('status_idle')}")
 
     def set_status(self, status: str) -> None:
         """

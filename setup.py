@@ -1,4 +1,4 @@
-"""Setup script for Transcripter."""
+"""Setup script for Deor Transcripter."""
 
 import sys
 from setuptools import setup, find_packages
@@ -38,14 +38,14 @@ entry_points = {
 }
 
 setup(
-    name="transcripter",
+    name="deor-transcripter",
     version="1.0.0",
     author="Klaus Deor",
     author_email="",
-    description="Cross-platform audio transcription tool using Groq API",
+    description="Cross-platform audio transcription tool with AI",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/klaus-deor/Transcripter",
+    url="https://github.com/klaus-deor/Deor-Transcripter",
     packages=find_packages(),
     include_package_data=True,
     package_data={

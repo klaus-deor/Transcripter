@@ -21,6 +21,7 @@ from .tray import TrayIcon, NotificationManager
 from .gui.settings import SettingsWindow
 from .gui.history import HistoryWindow
 from .providers import ProviderType
+from .i18n import set_language
 
 
 class TranscripterApp:
@@ -30,6 +31,11 @@ class TranscripterApp:
         """Initialize the application."""
         # Core components
         self.config_manager = ConfigManager()
+
+        # Set UI language from config
+        ui_lang = self.config_manager.config.general.ui_language
+        if ui_lang:
+            set_language(ui_lang)
         self.clipboard_manager = ClipboardManager()
         self.clipboard_history = ClipboardHistory(
             max_items=self.config_manager.config.history.max_items
@@ -251,10 +257,11 @@ class TranscripterApp:
             response_format = getattr(provider_config, 'response_format', 'text')
 
             # Transcribe with retry
+            lang = config.general.language if config.general.language else None
             transcription = self.transcription_service.transcribe_file_with_retry(
                 file_path=self.temp_audio_file,
                 model=model,
-                language=config.general.language if config.general.language else None,
+                language=lang,
                 temperature=temperature,
                 response_format=response_format,
                 max_retries=3
@@ -367,6 +374,50 @@ class TranscripterApp:
         print(f"Hotkey: {self.config_manager.config.hotkeys.start_recording}")
         print("Alternative: Send USR1 signal to toggle recording")
         print(f"  kill -USR1 {os.getpid()}")
+
+        # Wayland warning and shortcut setup
+        if os.environ.get('XDG_SESSION_TYPE') == 'wayland':
+            from .gnome_shortcut import shortcut_exists, create_gnome_shortcut
+
+            if shortcut_exists():
+                print("")
+                print("Wayland detectado. Atalho do sistema já configurado (Ctrl+Alt+R).")
+                print("")
+            else:
+                print("")
+                print("=" * 50)
+                print("AVISO: Wayland detectado!")
+                print("Hotkeys globais são bloqueadas pelo Wayland.")
+                print("=" * 50)
+                print("")
+                print("Configurando atalho do sistema automaticamente...")
+
+                success, msg = create_gnome_shortcut()
+                print(msg)
+
+                if success:
+                    print("")
+                    print("Use Ctrl+Alt+R para iniciar/parar gravação!")
+                    print("")
+                    if self.config_manager.config.general.show_notifications:
+                        self.notification_manager.show(
+                            "Atalho Configurado",
+                            "Use Ctrl+Alt+R para gravar/parar."
+                        )
+                else:
+                    print("")
+                    print("Configure manualmente em:")
+                    print("  Configurações > Teclado > Atalhos Personalizados")
+                    print("  Nome: Transcripter")
+                    print("  Comando: kill -USR1 $(pgrep -f transcripter)")
+                    print("  Atalho: Ctrl+Alt+R")
+                    print("")
+                    if self.config_manager.config.general.show_notifications:
+                        self.notification_manager.show(
+                            "Wayland Detectado",
+                            "Configure um atalho manualmente em Configurações > Teclado > Atalhos.",
+                            icon="dialog-warning"
+                        )
 
         # Run GTK main loop
         try:
